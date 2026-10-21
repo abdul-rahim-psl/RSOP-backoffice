@@ -106,8 +106,8 @@ export interface Flow {
   summary: string;
   version: string;
   lanes: Lane[];
-  /** The snapshot the steps were built from. */
-  source: { baseUrl: string; fetchedAt: string };
+  /** Where the steps came from: a live API answer, or the snapshot and why the API could not be used. */
+  source: { baseUrl: string; fetchedAt: string; live: boolean; error?: string };
   nodes: FlowNode[];
   edges: FlowEdge[];
   txns: Txn[];

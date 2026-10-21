@@ -2,11 +2,14 @@
 import { excerpt, parseChain, type Message } from '../../lib/chain.ts';
 import type { Flow, FlowEdge, FlowNode, Lane } from '../../lib/flow.ts';
 import type { Yaml } from '../../lib/yaml.ts';
-import { ENDPOINTS, type Snapshot } from './endpoints.ts';
+import { ENDPOINTS, type Snapshot, type Source } from './endpoints.ts';
 import { services } from './services.ts';
 import raw from './snapshot.json' with { type: 'json' };
 
 export const snapshot = raw as Snapshot;
+
+/** The committed snapshot as a source: what the tests use, and what a page falls back to. */
+export const snapshotSource: Source = { ...snapshot, live: false };
 
 /** What the API does not say about a step. */
 export interface StepDetail {
@@ -43,9 +46,9 @@ export interface FlowSpec {
 
 export type BuiltFlow = Pick<Flow, 'lanes' | 'source' | 'nodes' | 'edges' | 'gaps'>;
 
-function chainFor(key: string) {
+function chainFor(source: Source, key: string) {
   for (const endpoint of ENDPOINTS) {
-    const chain = snapshot.responses[endpoint]?.[key];
+    const chain = source.responses[endpoint]?.[key];
     if (chain !== undefined) return { endpoint, chain };
   }
   return null;
@@ -54,15 +57,18 @@ function chainFor(key: string) {
 /** The hop's status word, short enough for the gap between two boxes: "pacs.002 AUTH" → "AUTH". */
 const shortLabel = (m: Message) => m.text.split(' ').at(-1)!;
 
-export function buildFlow(spec: FlowSpec): BuiltFlow {
+/** A missing chain is reported with this prefix, so a live answer without it can fall back to the snapshot. */
+export const NO_CHAIN = 'the API answer has no chain';
+
+export function buildFlow(source: Source, spec: FlowSpec): BuiltFlow {
   const nodes: FlowNode[] = [];
   const edges: FlowEdge[] = [];
   const gaps: string[] = [];
 
   spec.lanes.forEach((lane, li) => {
-    const found = chainFor(lane.key);
+    const found = chainFor(source, lane.key);
     if (!found) {
-      gaps.push(`the API snapshot has no chain "${lane.key}"`);
+      gaps.push(`${NO_CHAIN} "${lane.key}"`);
       return;
     }
     const chain = parseChain(found.chain);
@@ -117,7 +123,7 @@ export function buildFlow(spec: FlowSpec): BuiltFlow {
 
   return {
     lanes: spec.lanes.map(({ key, title, note }) => ({ key, title, note })),
-    source: { baseUrl: snapshot.baseUrl, fetchedAt: snapshot.fetchedAt },
+    source: { baseUrl: source.baseUrl, fetchedAt: source.fetchedAt, live: source.live, ...(source.error && { error: source.error }) },
     nodes,
     edges,
     gaps,

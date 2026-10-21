@@ -8,9 +8,11 @@ import type { Flow } from '../../lib/flow';
 
 interface Props {
   flow: Flow;
+  /** Every flow, from the same API answer as this one. */
+  flows: Flow[];
 }
 
-const { flow } = Astro.props;
+const { flow, flows } = Astro.props;
 
 /** The WSI carries the sketch's "YML T…", so the inspector opens on it. */
 const defaultNode = flow.nodes.find((n) => n.service === 'web-service-interface')?.id ?? flow.nodes[0].id;
@@ -30,7 +32,7 @@ const json = JSON.stringify(client).replace(/</g, '\\u003c');
 ---
 
 <div class="designer" data-designer data-default-node={defaultNode} data-default-txn={defaultTxn}>
-  <Rail flow={flow} />
+  <Rail flow={flow} flows={flows} />
   <div class="dz-main">
     <Canvas flow={flow} />
     <Timeline flow={flow} defaultTxn={defaultTxn} />

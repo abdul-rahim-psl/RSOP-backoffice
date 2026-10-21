@@ -1,6 +1,7 @@
 import type { Flow, Tone, TxnEvent } from '../../lib/flow.ts';
 import { pkr } from '../../lib/format.ts';
-import { buildFlow } from '../api/build.ts';
+import { buildFlow, snapshotSource } from '../api/build.ts';
+import type { Source } from '../api/endpoints.ts';
 import { banks, bills, paymentRefs } from '../sample.ts';
 
 const { propertyTax: pt } = bills;
@@ -262,13 +263,14 @@ const notifyParams = (message: string, topic: string) => ({
 
 const brokerParams = (topic: string) => ({ topic, durable: true, consumers: ['receiving-service'], deadLetter: `${topic}.dlq` });
 
-export const paymentFlow: Flow = {
+/** The flow drawn from one API answer; the page calls this on every request. */
+export const makePaymentFlow = (source: Source): Flow => ({
   id: 'payment',
   name: 'Bill payment',
   nav: 'Payment',
   summary: 'A bank pays against an inquiry; RSOP checks it, Raast settles it, then RSOP tells the biller.',
   version: 'v0.1 draft',
-  ...buildFlow({
+  ...buildFlow(source, {
     lanes: [
       { key: 'billPaymentFlow1', prefix: 'auth-', title: '1 · pacs.008 → AUTH', note: 'Raast forwards the payment; RSOP checks it and answers' },
       { key: 'billPaymentFlow2', prefix: 'acsp-', title: '2 · ACSP → bill marking', note: 'Raast settles; RSOP marks the bill through store-and-forward' },
@@ -500,4 +502,6 @@ export const paymentFlow: Flow = {
       ],
     },
   ],
-};
+});
+
+export const paymentFlow = makePaymentFlow(snapshotSource);

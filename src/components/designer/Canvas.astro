@@ -2,7 +2,7 @@
 import Icon, { type IconName } from '../Icon.astro';
 import ToneIcon from '../ToneIcon.astro';
 import { GRID, layout, type Flow, type FlowNode, type NodeKind, type PlacedNode } from '../../lib/flow';
-import { pkt } from '../../lib/format';
+import { pkt, pktTime } from '../../lib/format';
 
 interface Props {
   flow: Flow;
@@ -45,7 +45,14 @@ const leads = (n: FlowNode) =>
   flow.edges
     .filter((e) => e.from === n.id && e.kind !== 'handoff' && (e.message || e.label))
     .map((e) => (e.message ? `${e.message.verb} ${e.message.text}` : e.label));
-const fetched = pkt(flow.source.fetchedAt);
+const src = flow.source;
+const fetched = pkt(src.fetchedAt);
+// Live: fetched for this page load. Otherwise the snapshot, and, when the API failed, why.
+const pill = src.live
+  ? { tone: 'ok', text: `RSOP API · live ${pktTime(src.fetchedAt)}`, about: `steps fetched from ${src.baseUrl} for this page at ${fetched} PKT` }
+  : src.error
+    ? { tone: 'wait', text: `API unreachable · snapshot ${pkt(src.fetchedAt, true)}`, about: `RSOP's flow API could not be used (${src.error}), so the steps come from the snapshot of ${src.baseUrl} pulled ${fetched} PKT` }
+    : { tone: 'info', text: `RSOP API · snapshot ${pkt(src.fetchedAt, true)}`, about: `steps from the snapshot of ${src.baseUrl} pulled ${fetched} PKT` };
 ---
 
 <section class="canvas" aria-labelledby="canvas-h">
@@ -53,9 +60,9 @@ const fetched = pkt(flow.source.fetchedAt);
     <div class="tb-title">
       <h2 id="canvas-h" class="tb-flow">{flow.name}</h2>
       <span class="pill" data-tone="wait">{flow.version}</span>
-      <span class="pill" data-tone="info" title={`Steps from a snapshot of ${flow.source.baseUrl}, pulled ${fetched} PKT`}>
-        RSOP API · {pkt(flow.source.fetchedAt, true)}
-        <span class="sr-only">: steps from a snapshot of {flow.source.baseUrl}, pulled {fetched} PKT</span>
+      <span class="pill" data-tone={pill.tone} data-source={src.live ? 'live' : 'snapshot'} title={pill.about}>
+        {pill.text}
+        <span class="sr-only">: {pill.about}</span>
       </span>
       <p class="tb-sum">{flow.summary}</p>
     </div>

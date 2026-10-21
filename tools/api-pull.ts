@@ -3,40 +3,13 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { parseChain } from '../src/lib/chain.ts';
-import { API_BASE, ENDPOINTS, type Endpoint, type Snapshot } from '../src/data/api/endpoints.ts';
+import { API_BASE, ENDPOINTS, type Snapshot } from '../src/data/api/endpoints.ts';
+import { fetchChains } from '../src/data/api/fetch.ts';
 
 const FILE = new URL('../src/data/api/snapshot.json', import.meta.url);
 const TIMEOUT_MS = 5000;
 const base = (process.env.RSOP_API_BASE || API_BASE).replace(/\/+$/, '');
 const checkOnly = process.argv.includes('--check');
-
-async function get(path: Endpoint): Promise<Record<string, string>> {
-  const url = base + path;
-  let res: Response;
-  try {
-    res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
-  } catch (e) {
-    const err = e as Error;
-    if (err.name === 'TimeoutError') throw new Error(`${url} did not answer within ${TIMEOUT_MS / 1000} s`);
-    throw new Error(`${url} could not be reached (${(err.cause as Error | undefined)?.message ?? err.message})`);
-  }
-  if (!res.ok) throw new Error(`${url} answered ${res.status}`);
-  const body: unknown = await res.json().catch(() => {
-    throw new Error(`${url} did not answer JSON`);
-  });
-  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error(`${url} did not answer a JSON object`);
-  const out: Record<string, string> = {};
-  for (const [key, chain] of Object.entries(body)) {
-    if (typeof chain !== 'string') throw new Error(`${url}: "${key}" is not a chain string`);
-    try {
-      parseChain(chain);
-    } catch (e) {
-      throw new Error(`${url}: "${key}" does not parse: ${(e as Error).message}`);
-    }
-    out[key] = chain;
-  }
-  return out;
-}
 
 const steps = (chain: string) => parseChain(chain).steps.map((s) => s.name).join(' → ');
 
@@ -59,8 +32,10 @@ async function main() {
   const old: Snapshot | undefined = await readFile(FILE, 'utf8')
     .then((s) => JSON.parse(s) as Snapshot)
     .catch(() => undefined);
-  const responses = Object.fromEntries(await Promise.all(ENDPOINTS.map(async (p) => [p, await get(p)] as const))) as Snapshot['responses'];
+  const responses = await fetchChains(base, TIMEOUT_MS);
   const changes = diff(old?.responses, responses);
+  // A new address is worth recording even when the chains match, since the page names its source.
+  if (old && old.baseUrl !== base) changes.unshift(`~ source: ${old.baseUrl} → ${base}`);
 
   if (!changes.length) {
     console.log(`No change: the API matches the snapshot pulled ${old!.fetchedAt} from ${old!.baseUrl}.`);

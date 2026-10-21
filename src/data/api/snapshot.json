@@ -1,6 +1,6 @@
 {
-  "baseUrl": "http://10.0.70.144:9991",
-  "fetchedAt": "2026-10-21T16:08:16Z",
+  "baseUrl": "http://192.168.9.15:9991",
+  "fetchedAt": "2026-10-21T18:21:18Z",
   "responses": {
     "/api/v1/billInquiryFlow": {
       "billInquiryFlow": "Start<-->raast-api-gateway<-->mpg-incoming-billing-service<-->web-service-interface<-->queue-processor<-->rest-handler<-->fbr-biller-mock-->End"

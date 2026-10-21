@@ -426,7 +426,7 @@ The figures are consistent with each other; the tests check every sum below.
 
 | Concern | Choice | Same as RSOP demo |
 |---|---|---|
-| Framework | Astro 7.3 (`astro@^7.3.5`), static output | Yes |
+| Framework | Astro 7.3 (`astro@^7.3.5`), static output; the Designer pages render per request through `@astrojs/node` | Static: yes. Per request: new |
 | Language | TypeScript, extending `astro/tsconfigs/strict` | Yes |
 | Styling | Hand-written CSS: tokens in `src/styles/global.css`, one stylesheet for the Designer, scoped styles per component | Yes |
 | Interactivity | Vanilla TypeScript in Astro `<script>` tags; no UI framework | Yes |
@@ -468,7 +468,7 @@ RSOP demo 2/
 
 - **One page per flow.** `src/pages/designer/[flow].astro` builds `/designer/inquiry/` and `/designer/payment/` from the data. The flow list is plain links, so switching flows works without JavaScript.
 - **No client-side templating.** Nodes, YAML panels, events and Debug entries are all rendered at build time. The script sets `data-*` state and `hidden`.
-- **Steps from the API snapshot.** `npm run api:pull` writes `src/data/api/snapshot.json`, and the build and the tests read only that file, so neither touches the network. `buildFlow()` turns each chain into steps and hops, then adds the doc's steps.
+- **Steps from the API, per request.** Each Designer request fetches both endpoints on the server (`src/data/api/live.ts`, 3 s timeout). The page draws the snapshot instead when the API fails or lacks a chain. `npm run api:pull` refreshes the snapshot, which the tests read, so they never touch the network. `buildFlow()` turns each chain into steps and hops, then adds the doc's steps.
 - **Layout from the grid.** `layout(flow)` turns lanes, columns and rows into pixel positions and edge paths. The same function feeds the build and the tests.
 - **Zoom, not scale.** The canvas zooms with CSS `zoom`. When a scale transform changes, Chrome leaves SVG edge labels painted at their unscaled position.
 - **Tests run without a build step**, as in RSOP demo. `src/data` and `src/lib` use only syntax Node can strip, and imports carry `.ts` extensions.
@@ -553,7 +553,7 @@ The doc's demo checks, as the tests run them on the sample transactions:
 | 10 | Should the dashboard have a date-range filter? | Charts and table scope | No; "today" only |
 | 11 | What roles and permissions does the back office need? | Users screen | Admin, Operator, Designer, Viewer (placeholders) |
 | 12 | What does RSOP return when the biller cannot find a bill? | Inquiry transaction 3 | An error to the gateway, nothing stored |
-| 13 | Must the canvas update live in the browser? | The API sends no CORS headers and sits on a private address | No: build from the committed snapshot |
+| 13 | Must the canvas reflect the API on every request? | The API sends no CORS headers and sits on a private address | Yes: the server fetches it per request; the snapshot is the fallback |
 | 14 | Does the API outrank the sketch on which steps a flow has? | Decides what each canvas draws | Yes |
 | 15 | Payment as one page with two lanes, or as two flows in the rail? | Every sample payment crosses both chains | One page, two lanes |
 | 16 | The API's messages, such as `GET PACS008`: edge labels or boxes of their own? | Canvas width and reading | Edge labels, as the sketch labels "WS" on an edge |

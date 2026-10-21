@@ -18,7 +18,7 @@ The full plan is in [details.md](details.md).
 - **What.** A first-draft, clickable UI for the RSOP back office, drawn from KJ's HLD sketch. It has four screens: sign-in, a dashboard with bill-pay stats and billing, the RSOP Designer, and user management.
 - **For whom.** KJ and the team, so they can agree on screens and behaviour before any backend exists.
 - **The core.** The Designer draws the Inquiry and Payment flows as pipelines.
-  - The steps come from RSOP's flow API, through a committed snapshot ([api-integration/plan.md](api-integration/plan.md)).
+  - The steps come from RSOP's flow API, fetched on every page load ([api-integration/plan.md](api-integration/plan.md)).
   - The Inquiry keeps KJ's main line: Incoming Bill → WSI → RabbitMQ → REST → WS → government biller.
   - Payment runs as two chains: pacs.008 → AUTH, then ACSP → bill marking.
   - Clicking a step shows its YAML parameters.
@@ -31,8 +31,8 @@ The full plan is in [details.md](details.md).
 | | |
 |---|---|
 | **Source of truth** | RSOP's flow API for each flow's steps; KJ's sketch for the screens and the names of the steps it draws; the [Open Connect doc](../../RSOP%20demo/docs/Open_Connect_RAAST_Inquiry_and_Bill_Payment.docx) for how the flows behave |
-| **Stack** | Astro 7.3 static site, strict TypeScript, hand-written CSS, vanilla TypeScript for the interactive parts |
-| **Backend** | None at run time. Each flow's steps come from a snapshot of RSOP's flow API, which `npm run api:pull` refreshes. Every figure, user, parameter and transaction is mock data in `src/data/` |
+| **Stack** | Astro 7.3, static except the Designer pages, which render per request; strict TypeScript, hand-written CSS, vanilla TypeScript for the interactive parts |
+| **Backend** | The preview server fetches RSOP's flow API on every Designer page load, falling back to a committed snapshot. Every figure, user, parameter and transaction is mock data in `src/data/` |
 | **Location** | `RSOP demo 2/` is the project root; the sketch stays in `pics/` |
 | **This draft** | All four screens; both flows, each with one sample transaction, "FBR" |
 | **Next** | Fold in KJ's answers, then decide whether the Designer becomes an editor |
@@ -73,7 +73,7 @@ The photo is taken sideways; [sketch-upright.jpg](sketch-upright.jpg) is the sam
 ## How it is built
 
 - Astro 7.3, strict TypeScript and hand-written CSS. Tokens, fonts and the theme toggle come from RSOP demo, so both demos read as one family. Dark is the default.
-- Each flow is a typed data file: its YAML parameters, descriptions and a sample transaction. Its steps and hops are built from the API snapshot. One Astro component draws any flow, and a small vanilla script handles selection, the transaction overlay and the timeline.
+- Each flow is a typed data file: its YAML parameters, descriptions and a sample transaction. Its steps and hops are built from the API's answer for each page load. One Astro component draws any flow, and a small vanilla script handles selection, the transaction overlay and the timeline.
 - All content is rendered at build time. Without JavaScript, each flow page still shows the pipeline, every step's parameters and every transaction's events.
 - `npm run check` runs `astro check` and Node's built-in test runner. The tests check that each flow is a sound graph, that each lane matches its API chain, and that the Inquiry keeps the sketch's blocks in order. They check the transactions against the doc's demo checks, for example that a refused payment never reaches bill marking. They also check that the dashboard's figures add up.
 - The charts are plain SVG. Their colours were checked with a colour-vision validator in both themes, and every chart has a table view.

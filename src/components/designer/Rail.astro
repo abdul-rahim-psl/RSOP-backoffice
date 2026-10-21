@@ -2,13 +2,13 @@
 import Icon from '../Icon.astro';
 import ToneIcon from '../ToneIcon.astro';
 import { isRound, type Flow } from '../../lib/flow';
-import { flows } from '../../data/flows/index';
 
 interface Props {
   flow: Flow;
+  flows: Flow[];
 }
 
-const { flow } = Astro.props;
+const { flow, flows } = Astro.props;
 ---
 
 <aside class="rail" aria-label="Flows and transactions">

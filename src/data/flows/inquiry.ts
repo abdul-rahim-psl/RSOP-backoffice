@@ -1,5 +1,6 @@
 import type { Flow, TxnEvent } from '../../lib/flow.ts';
-import { buildFlow } from '../api/build.ts';
+import { buildFlow, snapshotSource } from '../api/build.ts';
+import type { Source } from '../api/endpoints.ts';
 import { banks, bills } from '../sample.ts';
 
 const { propertyTax: pt } = bills;
@@ -142,13 +143,14 @@ function replyLeg(o: { ref: string; code: string; billRef: string; type: string;
   ];
 }
 
-export const inquiryFlow: Flow = {
+/** The flow drawn from one API answer; the page calls this on every request. */
+export const makeInquiryFlow = (source: Source): Flow => ({
   id: 'inquiry',
   name: 'Bill inquiry',
   nav: 'Inquiry',
   summary: 'A bank asks what a bill costs; RSOP asks the biller, keeps the answer and returns it.',
   version: 'v0.1 draft',
-  ...buildFlow({
+  ...buildFlow(source, {
     lanes: [{ key: 'billInquiryFlow', title: 'Bill inquiry', note: 'Gateway in, biller out, the answer back the same way' }],
     labels: { 'rest>biller': 'WS' },
     details: {
@@ -281,4 +283,6 @@ export const inquiryFlow: Flow = {
       ],
     },
   ],
-};
+});
+
+export const inquiryFlow = makeInquiryFlow(snapshotSource);

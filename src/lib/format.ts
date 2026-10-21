@@ -46,3 +46,8 @@ const pktShort = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Karachi', da
 
 /** An ISO time in Pakistan time: "21 Oct 2026, 21:08", or "21 Oct, 21:08" when short. */
 export const pkt = (iso: string, short = false) => (short ? pktShort : pktLong).format(new Date(iso));
+
+const pktClock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Karachi', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+
+/** An ISO time as a Pakistan-time clock: "23:41:07". */
+export const pktTime = (iso: string) => pktClock.format(new Date(iso));

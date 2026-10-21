@@ -13,6 +13,7 @@
     "api:check": "node tools/api-pull.ts --check"
   },
   "dependencies": {
+    "@astrojs/node": "^11.1.9",
     "astro": "^7.3.5"
   },
   "devDependencies": {

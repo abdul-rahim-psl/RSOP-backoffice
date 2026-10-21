@@ -14,7 +14,7 @@
 
 ## Overview
 
-A first-draft, frontend-only UI for the RSOP back office, built from KJ's HLD sketch ([pics/](pics/), upright copy in [docs/sketch-upright.jpg](docs/sketch-upright.jpg)). The Designer's steps come from RSOP's flow API, through a committed snapshot (see [The flow API](#the-flow-api)). Everything else runs on mock data, and the browser connects to nothing: not RSOP, Raast, RabbitMQ or a biller. The plan behind it is in [docs/executive-summary.md](docs/executive-summary.md) and [docs/details.md](docs/details.md).
+A first-draft UI for the RSOP back office, built from KJ's HLD sketch ([pics/](pics/), upright copy in [docs/sketch-upright.jpg](docs/sketch-upright.jpg)). The Designer's steps come from RSOP's flow API, fetched by the preview server on every page load (see [The flow API](#the-flow-api)). Everything else runs on mock data, and the browser itself connects to nothing: not RSOP, Raast, RabbitMQ or a biller. The plan behind it is in [docs/executive-summary.md](docs/executive-summary.md) and [docs/details.md](docs/details.md).
 
 | Route | Screen |
 |---|---|
@@ -33,7 +33,7 @@ Requires Node.js 22.12 or newer.
 ```sh
 npm install
 npm run dev       # http://localhost:4321
-npm run build     # static output in dist/
+npm run build     # dist/client (static pages) and dist/server (the Designer, rendered per request)
 npm run preview   # serve the built site
 ```
 
@@ -70,8 +70,11 @@ npm run api:pull    # fetch both chains into src/data/api/snapshot.json; prints 
 npm run api:check   # compare the live API with the snapshot; exits 1 if they differ or it can't be reached
 ```
 
-- **Base URL.** It defaults to `http://10.0.70.144:9991`; set `RSOP_API_BASE` to point elsewhere.
-- **The build never calls the API.** It reads the committed snapshot, so builds work offline and the tests see the same steps as the page. The browser couldn't call the API anyway: it sends no CORS headers and sits on a private address.
+- **Base URL.** It defaults to `http://192.168.9.15:9991`; set `RSOP_API_BASE` to point elsewhere.
+- **Every Designer page load calls the API.** The preview server makes the call, not the browser: the API sends no CORS headers and sits on a private address. The toolbar's green pill reads "RSOP API · live" with the fetch time.
+- **The fallback.** If the API doesn't answer within 3 s, or its answer lacks a chain a flow needs, the page draws the snapshot instead. The pill then reads "API unreachable · snapshot", with the reason on hover.
+- **Pages that need a server.** Only the Designer pages; sign-in, the dashboard and users stay static. `npm run preview` (port 4392 here) runs the Node adapter's server.
+- **The snapshot** is the tests' fixture and the fallback. `npm run api:pull` refreshes it.
 - **The snapshot keeps the raw responses**, so a parser change never needs a new pull.
 - **A new service.** If the API adds one, the page still renders it as a plain step. `npm run check` then names the service, the missing description and any sample transaction it breaks.
 - **The plan behind this** is in [docs/api-integration/plan.md](docs/api-integration/plan.md).
@@ -96,7 +99,7 @@ npm run api:check   # compare the live API with the snapshot; exits 1 if they di
 ## How the Designer works
 
 - **Steps from the API.**
-  - Each canvas draws the chains in the API snapshot. Payment's two chains are two titled lanes.
+  - Each canvas draws the chains the API returns for that page load. Payment's two chains are two titled lanes.
   - An arrowhead at both ends marks a request and its reply. A hop's label is the message it carries ("pacs.008", "AUTH", "ACSP").
   - Start and End mark where a chain begins and ends; they take no transaction status.
   - The inspector shows where the API puts each step: its endpoint, key, position and neighbours.
@@ -142,7 +145,7 @@ None of these were confirmed; each is the plan's default (see [docs/details.md](
 | Which are the "4 screen static"? | Sign in, Dashboard, Designer, Users, all on mock data |
 | Designer: editor or viewer? | Viewer; YAML read-only |
 | Stack | Astro, as in RSOP demo |
-| Where each flow's steps come from | RSOP's flow API, from a committed snapshot; the browser never calls it |
+| Where each flow's steps come from | RSOP's flow API, fetched by the server on every Designer page load; the committed snapshot is the fallback |
 | The API or the sketch, when they differ | The API decides the steps; the sketch names the ones it draws |
 | Payment canvas | One page, two lanes, plus the doc's inquiry store and Rejected, tagged "From the doc" |
 | The API's messages (`GET PACS008`) | Edge labels, shortened to "pacs.008", "AUTH" and "ACSP" |

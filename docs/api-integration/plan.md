@@ -56,7 +56,7 @@ Claims are tagged by source:
 
 ### 2.1 Responses
 
-Both endpoints are `GET` with no auth. Both return `200` with `Content-Type: application/json` (live, 21 Oct 2026, 20:46 PKT). The base URL is `http://10.0.70.144:9991`.
+Both endpoints are `GET` with no auth. Both return `200` with `Content-Type: application/json` (live, 21 Oct 2026, 23:20 PKT). The base URL is `http://192.168.9.15:9991`.
 
 `GET /api/v1/billInquiryFlow`:
 
@@ -92,7 +92,7 @@ All verified live on 2026-10-21:
 
 - **Fetch from the page.** A `fetch` from `http://127.0.0.1:4392/designer/inquiry/` fails in Chrome. The error: "No 'Access-Control-Allow-Origin' header is present on the requested resource".
 - **Preflight.** The CORS preflight (`OPTIONS`) returns `403 Invalid CORS request`.
-- **Tunnel viewers.** The API's address is private (10.0.70.144), so a tunnel viewer's browser can't reach it. An `https` tunnel page calling `http` would also be blocked as mixed content (inferred).
+- **Tunnel viewers.** The API's address is private (192.168.9.15), so a tunnel viewer's browser can't reach it. An `https` tunnel page calling `http` would also be blocked as mixed content (inferred).
 
 ## 3. The API against the draft
 
@@ -197,7 +197,7 @@ RSOP API ── npm run api:pull ──▶ src/data/api/snapshot.json
 ### 5.1 Pull script and snapshot
 
 - **New `tools/api-pull.ts`.** Node runs it directly, as it already runs the TypeScript tests. It adds no dependency. It:
-  - reads `RSOP_API_BASE`, default `http://10.0.70.144:9991`;
+  - reads `RSOP_API_BASE`, default `http://192.168.9.15:9991`;
   - `GET`s both endpoints with a 5 s timeout;
   - parses every chain with `parseChain()` before writing, so it never saves a snapshot the app can't read;
   - writes `src/data/api/snapshot.json`;
@@ -213,7 +213,7 @@ RSOP API ── npm run api:pull ──▶ src/data/api/snapshot.json
 
   ```json
   {
-    "baseUrl": "http://10.0.70.144:9991",
+    "baseUrl": "http://192.168.9.15:9991",
     "fetchedAt": "2026-10-21T15:46:28Z",
     "responses": {
       "/api/v1/billInquiryFlow": { "billInquiryFlow": "Start<-->…-->End" },
@@ -399,7 +399,7 @@ Review stops come after step 3 (Inquiry on the preview) and after step 5 (Paymen
 
 | # | Question | Default until answered |
 |---|---|---|
-| 1 | Must the canvas update live in the browser? That needs CORS for the back office's origin and a reachable HTTPS URL, or a same-origin proxy | No: build from the snapshot |
+| 1 | Must the canvas update live? The browser cannot call the API (no CORS, private address) | Yes: the Designer renders on the server per request, through `@astrojs/node`; the snapshot is the fallback |
 | 2 | Does the API outrank the sketch on which steps a flow has? | Yes |
 | 3 | Payment as one page with two lanes, or as two flows in the rail? | One page, since every sample payment crosses both lanes |
 | 4 | Messages such as `GET PACS008`: edge labels, or boxes of their own? | Edge labels, as the sketch labels "WS" on an edge |
