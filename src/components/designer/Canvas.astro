@@ -1,7 +1,8 @@
 ---
 import Icon, { type IconName } from '../Icon.astro';
 import ToneIcon from '../ToneIcon.astro';
-import { GRID, layout, type Flow, type NodeKind } from '../../lib/flow';
+import { GRID, layout, type Flow, type FlowNode, type NodeKind, type PlacedNode } from '../../lib/flow';
+import { pkt } from '../../lib/format';
 
 interface Props {
   flow: Flow;
@@ -9,24 +10,42 @@ interface Props {
 
 const { flow } = Astro.props;
 const scene = layout(flow);
+const titled = flow.lanes.length > 1;
 
 const icons: Record<NodeKind, IconName | null> = {
   start: null,
+  end: null,
+  party: 'raast',
   inbound: 'inbound',
+  notify: 'mail',
   wsi: 'wsi',
-  decision: 'decision',
-  wait: 'wait',
   queue: 'queue',
   rest: 'rest',
+  saf: 'retry',
   store: 'store',
-  end: 'biller',
+  biller: 'biller',
+  reject: 'reject',
+  service: 'more',
 };
 
-// Reading order follows the main line; the store and the refusal come right after the step they hang off.
+// Reading order follows each lane's main line; the store and the refusal come right after the step they hang off.
 const rowRank = { 0: 0, '-1': 1, 1: 2 } as const;
-const ordered = [...scene.nodes].sort(
-  (a, b) => a.node.col * 10 + rowRank[a.node.row] - (b.node.col * 10 + rowRank[b.node.row]),
-);
+const lanes = flow.lanes.map((lane, i) => ({
+  lane,
+  id: `lane-${flow.id}-${i}`,
+  y: scene.lanes.find((l) => l.lane.key === lane.key)?.y ?? 0,
+  placed: scene.nodes
+    .filter((p) => p.node.lane === i)
+    .sort((a, b) => a.node.col * 10 + rowRank[a.node.row] - (b.node.col * 10 + rowRank[b.node.row])),
+}));
+
+const name = (n: FlowNode) => `${n.label}${n.sub ? `, ${n.sub}` : ''}${n.origin === 'doc' ? ', added from the doc' : ''}`;
+/** What leaves a step, for screen readers: the full message where the API names one. */
+const leads = (n: FlowNode) =>
+  flow.edges
+    .filter((e) => e.from === n.id && e.kind !== 'handoff' && (e.message || e.label))
+    .map((e) => (e.message ? `${e.message.verb} ${e.message.text}` : e.label));
+const fetched = pkt(flow.source.fetchedAt);
 ---
 
 <section class="canvas" aria-labelledby="canvas-h">
@@ -34,6 +53,10 @@ const ordered = [...scene.nodes].sort(
     <div class="tb-title">
       <h2 id="canvas-h" class="tb-flow">{flow.name}</h2>
       <span class="pill" data-tone="wait">{flow.version}</span>
+      <span class="pill" data-tone="info" title={`Steps from a snapshot of ${flow.source.baseUrl}, pulled ${fetched} PKT`}>
+        RSOP API · {pkt(flow.source.fetchedAt, true)}
+        <span class="sr-only">: steps from a snapshot of {flow.source.baseUrl}, pulled {fetched} PKT</span>
+      </span>
       <p class="tb-sum">{flow.summary}</p>
     </div>
     <div class="tb-tools">
@@ -62,10 +85,12 @@ const ordered = [...scene.nodes].sort(
           {
             scene.edges.map((pe) => (
               <g class="edge" data-kind={pe.edge.kind} data-key={`${pe.edge.from}>${pe.edge.to}`}>
+                {pe.edge.message && <title>{`${pe.edge.message.verb} ${pe.edge.message.text} (the API: ${pe.edge.message.raw})`}</title>}
                 <path class="edge-line" d={pe.d} />
                 {pe.arrow && <path class="edge-arrow" d={pe.arrow} />}
+                {pe.back && <path class="edge-arrow" d={pe.back} />}
                 {pe.edge.label && pe.label && (
-                  <text class="edge-label" x={pe.label.x} y={pe.label.y} text-anchor="middle">
+                  <text class="edge-label" x={pe.label.x} y={pe.label.y} text-anchor={pe.label.anchor}>
                     {pe.edge.label}
                   </text>
                 )}
@@ -74,51 +99,72 @@ const ordered = [...scene.nodes].sort(
           }
         </svg>
 
-        <ol class="nodes" aria-label={`${flow.name}: steps in order`}>
+        <ol class="nodes" aria-label={titled ? `${flow.name}: parts in order` : `${flow.name}: steps in order`}>
           {
-            ordered.map(({ node, box, round }) => {
-              const side = node.row === -1 ? 'right' : 'below';
-              const style =
-                side === 'right'
-                  ? `left:${box.x}px;top:${box.y}px`
-                  : `left:${box.cx - GRID.col / 2}px;top:${box.y}px;width:${GRID.col}px`;
-              const icon = node.id === 'rejected' ? 'reject' : icons[node.kind];
-              const edgeLabels = flow.edges.filter((e) => e.from === node.id && e.label).map((e) => e.label);
-              return (
-                <li>
-                  <button
-                    class="node"
-                    type="button"
-                    style={style}
-                    data-node={node.id}
-                    data-kind={node.kind}
-                    data-family={node.family}
-                    data-origin={node.origin}
-                    data-side={side}
-                    data-round={round ? '' : undefined}
-                    data-name={`${node.label}, ${node.sub}${node.origin === 'doc' ? ', added from the doc' : ''}`}
-                    aria-label={`${node.label}, ${node.sub}${node.origin === 'doc' ? ', added from the doc' : ''}`}
-                    aria-pressed="false"
-                    aria-controls="inspector"
-                  >
-                    <span class="nbox" style={`width:${box.w}px;height:${box.h}px`}>
-                      {icon && <Icon name={icon} size={round ? 18 : 24} />}
-                      <span class="badge" aria-hidden="true">
-                        <ToneIcon tone="ok" />
-                        <ToneIcon tone="fail" />
-                        <ToneIcon tone="wait" />
-                        <ToneIcon tone="info" />
-                      </span>
-                    </span>
-                    <span class="ncap">
-                      <span class="nlabel">{node.label}</span>
-                      <span class:list={['nsub', { mono: !!node.template }]}>{node.sub}</span>
-                      {edgeLabels.length > 0 && <span class="sr-only">Leads on with: {edgeLabels.join(', ')}</span>}
-                    </span>
-                  </button>
-                </li>
-              );
-            })
+            lanes.map(({ lane, id, y, placed }) => (
+              <li class="lane">
+                {titled && (
+                  <p class="lane-title" id={id} style={`left:${GRID.pad + 4}px;top:${y}px`}>
+                    <b>{lane.title}</b>
+                    <span class="lane-note">{lane.note}</span>
+                    <span class="lane-key mono">{lane.key}</span>
+                  </p>
+                )}
+                <ol class="lane-steps" aria-labelledby={titled ? id : undefined}>
+                  {placed.map(({ node, box, round }: PlacedNode) => {
+                    const side = node.row === -1 ? 'right' : 'below';
+                    const style =
+                      side === 'right'
+                        ? `left:${box.x}px;top:${box.y}px`
+                        : `left:${box.cx - GRID.col / 2}px;top:${box.y}px;width:${GRID.col}px`;
+                    const icon = icons[node.kind];
+                    const out = leads(node);
+                    return (
+                      <li>
+                        <button
+                          class="node"
+                          type="button"
+                          style={style}
+                          data-node={node.id}
+                          data-kind={node.kind}
+                          data-family={node.family}
+                          data-origin={node.origin}
+                          data-side={side}
+                          data-round={round ? '' : undefined}
+                          data-terminal={round ? '' : undefined}
+                          data-name={name(node)}
+                          aria-label={name(node)}
+                          aria-pressed="false"
+                          aria-controls="inspector"
+                        >
+                          <span class="nbox" style={`width:${box.w}px;height:${box.h}px`}>
+                            {icon && <Icon name={icon} size={24} />}
+                            <span class="badge" aria-hidden="true">
+                              <ToneIcon tone="ok" />
+                              <ToneIcon tone="fail" />
+                              <ToneIcon tone="wait" />
+                              <ToneIcon tone="info" />
+                            </span>
+                          </span>
+                          <span class="ncap">
+                            <span class="nlabel">{node.label}</span>
+                            {node.sub && (
+                              <span class:list={['nsub', { mono: !!node.service }]}>
+                                {/* Service names break only at their hyphens. */}
+                                {node.service
+                                  ? node.service.split('-').map((part, i, all) => (i < all.length - 1 ? <>{part}-<wbr /></> : part))
+                                  : node.sub}
+                              </span>
+                            )}
+                            {out.length > 0 && <span class="sr-only">Leads on with: {out.join(', ')}</span>}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </li>
+            ))
           }
         </ol>
       </div>
@@ -131,16 +177,20 @@ const ordered = [...scene.nodes].sort(
   <ul class="lg-list">
     <li><span class="lg-sw" data-family="raast"></span>Faces Raast</li>
     <li><span class="lg-sw" data-family="rsop"></span>RSOP’s own processing</li>
-    <li><span class="lg-sw" data-family="queue"></span>Queue</li>
+    <li><span class="lg-sw" data-family="queue"></span>Queue or broker</li>
     <li><span class="lg-sw" data-family="outbound"></span>Outbound call</li>
-    <li><span class="lg-sw" data-family="store"></span>Store</li>
+    <li><span class="lg-sw" data-family="store"></span>Store, or store-and-forward</li>
     <li><span class="lg-sw" data-family="biller"></span>Government biller</li>
     <li><span class="lg-sw" data-family="reject"></span>Refusal</li>
   </ul>
   <ul class="lg-list">
-    <li><span class="lg-box"></span>On KJ’s sketch</li>
+    <li><span class="lg-box"></span>From the RSOP API</li>
     <li><span class="lg-box dashed"></span>Added from the Open Connect doc</li>
-    <li><svg class="lg-line" viewBox="0 0 30 10" aria-hidden="true"><path d="M1 5H22" /><path class="ah" d="M29 5l-7-4v8z" /></svg>Flow; a label names the message</li>
+    <li><span class="lg-term"></span>Where an API chain starts or ends</li>
+    <li>
+      <svg class="lg-line" viewBox="0 0 30 10" aria-hidden="true"><path d="M8 5H22" /><path class="ah" d="M1 5l7-4v8z" /><path class="ah" d="M29 5l-7-4v8z" /></svg>Request and reply
+    </li>
+    <li><svg class="lg-line" viewBox="0 0 30 10" aria-hidden="true"><path d="M1 5H22" /><path class="ah" d="M29 5l-7-4v8z" /></svg>One way; a label names the message</li>
     <li><svg class="lg-line" viewBox="0 0 30 10" aria-hidden="true"><path class="dot" d="M1 5H29" /></svg>Reads or writes the store</li>
   </ul>
   <p class="seclabel lg-sub">With a transaction picked</p>

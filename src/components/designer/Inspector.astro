@@ -14,17 +14,27 @@ interface Props {
 const { flow, defaultNode, defaultTxn } = Astro.props;
 
 const icons: Record<NodeKind, IconName> = {
-  start: 'raast',
+  start: 'flag',
+  end: 'flag',
+  party: 'raast',
   inbound: 'inbound',
+  notify: 'mail',
   wsi: 'wsi',
-  decision: 'decision',
-  wait: 'wait',
   queue: 'queue',
   rest: 'rest',
+  saf: 'retry',
   store: 'store',
-  end: 'biller',
+  biller: 'biller',
+  reject: 'reject',
+  service: 'more',
 };
 const on = (id: string) => (id === defaultNode ? '' : undefined);
+/** The chain excerpt, one token per line; arrows and the step itself are marked for styling. */
+const pieces = (chain: string, self: string) =>
+  chain
+    .split(/(<-->|-->)/)
+    .filter(Boolean)
+    .map((v) => ({ v, arrow: /^(<-->|-->)$/.test(v), self: v === self || v.toLowerCase() === self.toLowerCase() }));
 ---
 
 <aside class="inspector" id="inspector" aria-labelledby="insp-h">
@@ -34,14 +44,14 @@ const on = (id: string) => (id === defaultNode ? '' : undefined);
     flow.nodes.map((n) => (
       <header class="insp-head" data-node={n.id} data-on={on(n.id)}>
         <span class="kind-chip" data-family={n.family}>
-          <Icon name={n.id === 'rejected' ? 'reject' : icons[n.kind]} size={20} />
+          <Icon name={icons[n.kind]} size={20} />
         </span>
         <div class="insp-name">
           <h3>{n.label}</h3>
-          <p class:list={{ mono: !!n.template }}>{n.sub}</p>
+          {n.sub && <p class:list={{ mono: !!n.service }}>{n.sub}</p>}
         </div>
         <span class="origin" data-origin={n.origin}>
-          {n.origin === 'sketch' ? 'On the sketch' : 'From the doc'}
+          {n.origin === 'api' ? 'From the API' : 'From the doc'}
         </span>
       </header>
     ))
@@ -62,6 +72,38 @@ const on = (id: string) => (id === defaultNode ? '' : undefined);
         <section class="insp-sec" data-node={n.id} data-on={on(n.id)}>
           <h3 class="nojs-only">{n.label}</h3>
           <p class="about">{n.about}</p>
+          {n.source && (
+            <div class="api-src">
+              <p class="api-src-h">
+                <Icon name="designer" size={15} />
+                From the RSOP API
+              </p>
+              <dl>
+                <div>
+                  <dt>Endpoint</dt>
+                  <dd class="mono">GET {n.source.endpoint}</dd>
+                </div>
+                <div>
+                  <dt>Key</dt>
+                  <dd class="mono">{n.source.key}</dd>
+                </div>
+                <div>
+                  <dt>Position</dt>
+                  <dd>
+                    Step {n.source.position} of {n.source.of}
+                  </dd>
+                </div>
+                <div>
+                  <dt>In the chain</dt>
+                  <dd class="mono chain">
+                    {pieces(n.source.excerpt, n.service ?? n.label).map((p) => (
+                      <span class:list={{ arr: p.arrow, self: p.self }}>{p.v}</span>
+                    ))}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          )}
           {n.template && (
             <p class="template">
               <Icon name="wsi" size={15} />

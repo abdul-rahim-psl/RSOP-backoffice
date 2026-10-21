@@ -140,6 +140,8 @@ function init(root: HTMLElement) {
     const ev = t.events[state.at];
     const states = statesAt(flow, t, state.at);
     nodes.forEach((b) => {
+      // Start and End only mark where an API chain begins and ends; no transaction stops there.
+      if (b.hasAttribute('data-terminal')) return;
       const id = b.dataset.node!;
       b.dataset.state = states[id];
       b.toggleAttribute('data-current', id === ev.node);

@@ -5,22 +5,23 @@
 - [Overview](#overview)
 - [Run locally](#run-locally)
 - [Checks](#checks)
+- [The flow API](#the-flow-api)
 - [Where things live](#where-things-live)
 - [How the Designer works](#how-the-designer-works)
 - [Design](#design)
 - [Decisions applied](#decisions-applied)
-- [When the sketch or the doc changes](#when-the-sketch-or-the-doc-changes)
+- [When the API, the sketch or the doc changes](#when-the-api-the-sketch-or-the-doc-changes)
 
 ## Overview
 
-A first-draft, frontend-only UI for the RSOP back office, built from KJ's HLD sketch ([pics/](pics/), upright copy in [docs/sketch-upright.jpg](docs/sketch-upright.jpg)). Everything runs on mock data; nothing connects to RSOP, Raast, RabbitMQ or a biller. The plan behind it is in [docs/executive-summary.md](docs/executive-summary.md) and [docs/details.md](docs/details.md).
+A first-draft, frontend-only UI for the RSOP back office, built from KJ's HLD sketch ([pics/](pics/), upright copy in [docs/sketch-upright.jpg](docs/sketch-upright.jpg)). The Designer's steps come from RSOP's flow API, through a committed snapshot (see [The flow API](#the-flow-api)). Everything else runs on mock data, and the browser connects to nothing: not RSOP, Raast, RabbitMQ or a biller. The plan behind it is in [docs/executive-summary.md](docs/executive-summary.md) and [docs/details.md](docs/details.md).
 
 | Route | Screen |
 |---|---|
 | `/` | Sign in: any username and password go to the dashboard |
 | `/dashboard/` | Bill-pay stats (collected, payments per hour, funnel, bill types) and billing (the bill ledger, filterable) |
-| `/designer/inquiry/` | RSOP Designer, Inquiry flow: KJ's pipeline, YAML params, four sample transactions on a timeline |
-| `/designer/payment/` | RSOP Designer, Payment flow: KJ's blocks plus the doc's Validate, Await ACSP and Rejected steps |
+| `/designer/inquiry/` | RSOP Designer, Inquiry flow: the API's chain, which is KJ's pipeline plus the gateway; YAML params; one sample transaction, "FBR", on a timeline |
+| `/designer/payment/` | RSOP Designer, Payment flow: the API's two chains (pacs.008 → AUTH, then ACSP → bill marking), plus the doc's inquiry store and Rejected steps |
 | `/users/` | Users, search and role filter, roles and permissions, invite and edit dialog (sends nothing) |
 
 `/designer/` redirects to the Inquiry flow.
@@ -48,8 +49,10 @@ This runs two things:
 
 - `astro check`: strict TypeScript across every page, component and data file.
 - `npm run check:data`: Node's built-in test runner on `tests/`. It checks:
-  - **Shape.** Both flows are sound graphs: one start, no dangling edges, every step reachable, no overlapping steps.
-  - **The sketch.** The Inquiry main line is exactly KJ's pipeline, the Payment flow keeps KJ's blocks in KJ's order, and every step the sketch doesn't draw is tagged as coming from the doc.
+  - **Shape.** Both flows are sound graphs: one start per lane, no dangling edges, every step reachable, no overlapping steps.
+  - **The API.** Each lane's steps are exactly its chain in the snapshot, every service the API names has a registry entry, and only API steps carry API data.
+  - **The sketch.** The Inquiry keeps KJ's blocks in KJ's order, with only the gateway and End added, and "WS" on the hop into the biller.
+  - **The chain parser.** It reads the three live chains and refuses malformed ones, naming the problem.
   - **The doc.** The sample transactions follow the doc's demo checks:
     - the inquiry ID is returned unchanged;
     - a refused payment never reaches bill marking;
@@ -58,15 +61,33 @@ This runs two things:
   - **The dashboard.** Every series adds up to its total, and every trace link opens a real sample transaction.
   - **YAML.** The serializer quotes what YAML would misread and keeps `TBC` notes as comments.
 
+## The flow API
+
+RSOP answers two endpoints with each flow's chain of services, for example `Start<-->raast-api-gateway<-->…-->End`. `<-->` is a request and its reply, and `-->` is one way.
+
+```sh
+npm run api:pull    # fetch both chains into src/data/api/snapshot.json; prints what changed
+npm run api:check   # compare the live API with the snapshot; exits 1 if they differ or it can't be reached
+```
+
+- **Base URL.** It defaults to `http://10.0.70.144:9991`; set `RSOP_API_BASE` to point elsewhere.
+- **The build never calls the API.** It reads the committed snapshot, so builds work offline and the tests see the same steps as the page. The browser couldn't call the API anyway: it sends no CORS headers and sits on a private address.
+- **The snapshot keeps the raw responses**, so a parser change never needs a new pull.
+- **A new service.** If the API adds one, the page still renders it as a plain step. `npm run check` then names the service, the missing description and any sample transaction it breaks.
+- **The plan behind this** is in [docs/api-integration/plan.md](docs/api-integration/plan.md).
+
 ## Where things live
 
 | What | File |
 |---|---|
-| The two flows, with their YAML params and sample transactions | `src/data/flows/inquiry.ts`, `src/data/flows/payment.ts` |
+| The two flows: descriptions, YAML params, the doc's steps and sample transactions | `src/data/flows/inquiry.ts`, `src/data/flows/payment.ts` |
+| The API snapshot, its endpoints, the service registry (labels, icons, families) and `buildFlow()` | `src/data/api/` |
+| Reading a chain string | `src/lib/chain.ts` |
+| Pulling or checking the snapshot | `tools/api-pull.ts` |
 | Shared sample bills and references | `src/data/sample.ts` |
 | Dashboard figures and the bill ledger | `src/data/dashboard.ts`, `src/data/bills.ts` |
 | Users, roles and permissions | `src/data/users.ts` |
-| Flow types, grid layout, graph checks, state at a timeline position | `src/lib/flow.ts` |
+| Flow types, lane and grid layout, graph checks, state at a timeline position | `src/lib/flow.ts` |
 | Data → coloured YAML | `src/lib/yaml.ts` |
 | The Designer (rail, canvas, timeline, inspector) | `src/components/designer/`, `src/scripts/designer.ts`, `src/styles/designer.css` |
 | Dashboard tiles and charts | `src/components/dashboard/`, `src/scripts/charts.ts`, `src/scripts/billing.ts`, `src/styles/dashboard.css` |
@@ -74,21 +95,35 @@ This runs two things:
 
 ## How the Designer works
 
+- **Steps from the API.**
+  - Each canvas draws the chains in the API snapshot. Payment's two chains are two titled lanes.
+  - An arrowhead at both ends marks a request and its reply. A hop's label is the message it carries ("pacs.008", "AUTH", "ACSP").
+  - Start and End mark where a chain begins and ends; they take no transaction status.
+  - The inspector shows where the API puts each step: its endpoint, key, position and neighbours.
 - **Rendered at build time.** Every step, YAML block, transaction event and Debug entry is rendered when the site is built. The script only switches state. Without JavaScript, the page still lists the whole pipeline, every step's parameters and every transaction's events.
 - **The layout.** It follows the sketch:
-  - Left: flows, then the transactions numbered 1–4.
+  - Left: flows, then the sample transaction, "FBR" (one per flow).
   - Middle: the canvas, with the timeline under it.
   - Right: the selected step's Params (YAML) and Debug tabs.
 - **Picking a transaction** overlays it on the canvas. Each step shows passed, failed or waiting; steps not reached are dimmed; crossed edges are drawn solid, and the current event's step pulses.
 - **The timeline** is a native range input laid over the event dots, so pointer, keyboard and screen-reader users share one control. Moving it selects the event's step, and the Debug tab shows only what had happened by then.
-- **Deep links.** `?txn=3&at=12&tab=debug#node-rest` opens a view exactly. `?txn=none` shows the bare design.
+- **Deep links.** `/designer/inquiry/?txn=3&at=7&tab=debug#node-rest` opens a view exactly. Payment step ids carry their lane: `#node-auth-receive`, `#node-acsp-saf-consume`. `?txn=none` shows the bare design.
 - **Zoom.** The canvas opens at "fit", never below 70%; below that it scrolls sideways within itself.
 
 ## Design
 
 - **The family look.** RSOP demo's tokens, fonts (EB Garamond and Nunito, both under the SIL Open Font License) and theme toggle, so both demos read as one family. Dark is the default.
 - **Denser than RSOP demo.** Smaller type and edge-to-edge panels; the serif is kept for page titles.
-- **Step colours** follow RSOP demo's party colours: Raast-facing pink, RSOP violet, the queue orange, outbound blue, the store grey, the biller green, refusal red. A dashed outline marks a step added from the doc rather than drawn on the sketch.
+- **Step colours** follow RSOP demo's party colours:
+  - Raast-facing: pink.
+  - RSOP: violet.
+  - Queues and the notification broker: orange.
+  - Outbound calls: blue.
+  - The store and the SAF dispatcher: grey.
+  - The biller: green.
+  - Refusal: red.
+
+  A dashed outline marks a step added from the doc rather than returned by the API.
 - **Chart colours** were checked with the dataviz colour-vision validator on this UI's own surfaces.
   - The settled/refused pair passes in both themes.
   - A third, "awaiting", colour failed beside refused, so awaiting has its own tile instead of a stack segment.
@@ -107,14 +142,22 @@ None of these were confirmed; each is the plan's default (see [docs/details.md](
 | Which are the "4 screen static"? | Sign in, Dashboard, Designer, Users, all on mock data |
 | Designer: editor or viewer? | Viewer; YAML read-only |
 | Stack | Astro, as in RSOP demo |
-| Payment canvas | KJ's blocks plus the doc's Validate, Await ACSP and Rejected, tagged "From the doc" |
-| The "T…" box, the "Tim…" strip, "Dvb…" | Transactions 1–4, a timeline, a Debug tab |
+| Where each flow's steps come from | RSOP's flow API, from a committed snapshot; the browser never calls it |
+| The API or the sketch, when they differ | The API decides the steps; the sketch names the ones it draws |
+| Payment canvas | One page, two lanes, plus the doc's inquiry store and Rejected, tagged "From the doc" |
+| The API's messages (`GET PACS008`) | Edge labels, shortened to "pacs.008", "AUTH" and "ACSP" |
+| Raw service names (`fbr-biller-mock`) | Shown in mono under a neutral label |
+| The "T…" box, the "Tim…" strip, "Dvb…" | Sample transactions (one per flow, "FBR"), a timeline, a Debug tab |
 | "Billing" | The bill ledger, not fee invoicing |
 | `NAUT` or `NAUTH` | `NAUT`, as in RSOP demo |
 | Branding and hosting | Neutral, local only |
 
-## When the sketch or the doc changes
+## When the API, the sketch or the doc changes
 
-1. Edit the flow in `src/data/flows/`: nodes, edges, params or transactions.
-2. Run `npm run check`. A failing test names the step, edge or doc rule that broke.
-3. If KJ's main line itself changes, update `SKETCH` in `tests/flows.test.ts` to match the new sketch.
+1. **The API.** Run `npm run api:pull` and read the change it prints. Then:
+   - add any new service to `src/data/api/services.ts`;
+   - describe its step in the flow file;
+   - move the sample transactions onto the new steps.
+2. **The sketch or the doc.** Edit the flow in `src/data/flows/`: descriptions, params, the doc's steps or the transactions.
+3. **Check.** Run `npm run check`. A failing test names the service, step, edge or doc rule that broke.
+4. **KJ's main line.** If it changes, update `SKETCH` in `tests/flows.test.ts` to match the new sketch.

@@ -32,3 +32,17 @@ export function delta(now: number, before: number): { text: string; up: boolean 
   const change = ((now - before) / before) * 100;
   return { text: `${change >= 0 ? '+' : '−'}${Math.abs(change).toFixed(1)}%`, up: change >= 0 };
 }
+
+const pktLong = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Karachi',
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+const pktShort = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Karachi', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+/** An ISO time in Pakistan time: "21 Oct 2026, 21:08", or "21 Oct, 21:08" when short. */
+export const pkt = (iso: string, short = false) => (short ? pktShort : pktLong).format(new Date(iso));

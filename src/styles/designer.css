@@ -353,10 +353,10 @@
   margin: auto;
 }
 
+/* Zoom, not a scale transform: Chrome leaves SVG labels painted at their unscaled spot when a transform changes. */
 .scene {
   position: relative;
-  transform: scale(var(--z));
-  transform-origin: 0 0;
+  zoom: var(--z);
 }
 
 .edges {
@@ -433,6 +433,30 @@
   inset: 0;
 }
 
+/* Each lane's title sits above its steps; the steps themselves are placed on the scene. */
+.lane-title {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lane-title b {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.lane-key {
+  color: var(--faint);
+  font-size: 10.5px;
+}
+
 /* A step: its box, with the caption underneath, as the sketch writes the names under the boxes. */
 .node {
   position: absolute;
@@ -487,6 +511,13 @@
   border-width: 2.5px;
   border-color: var(--ok);
   background: color-mix(in srgb, var(--ok) 10%, var(--panel-solid));
+}
+
+/* The chain's end is a thin neutral ring, so it never reads as a step. */
+.node[data-kind='end'] .nbox {
+  border-width: 2.5px;
+  border-color: var(--mut);
+  background: color-mix(in srgb, var(--mut) 8%, var(--panel-solid));
 }
 
 .node:hover .nbox {
@@ -683,6 +714,14 @@
 
 .lg-box.dashed {
   border-style: dashed;
+}
+
+.lg-term {
+  width: 16px;
+  height: 16px;
+  margin: 0 3px;
+  border: 2px solid var(--mut);
+  border-radius: 50%;
 }
 
 .lg-line {
@@ -1259,6 +1298,69 @@
 .placeholder .icon {
   flex: 0 0 auto;
   margin-top: 2px;
+}
+
+/* What the flow API says about the step, apart from the placeholder parameters below it. */
+.api-src {
+  padding: 10px 12px;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  background: var(--raised);
+}
+
+.api-src-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-2);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.api-src-h .icon {
+  color: var(--info);
+}
+
+.api-src dl {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+}
+
+.api-src dl > div {
+  display: grid;
+  grid-template-columns: 6.5em minmax(0, 1fr);
+  gap: 8px;
+}
+
+.api-src dt {
+  color: var(--faint);
+  font-weight: 700;
+}
+
+.api-src dd {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.api-src .mono {
+  font-size: 0.74rem;
+}
+
+.api-src .chain {
+  display: grid;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.api-src .chain .arr {
+  color: var(--faint);
+}
+
+.api-src .chain .self {
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .yaml-wrap {

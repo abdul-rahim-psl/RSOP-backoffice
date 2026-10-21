@@ -13,7 +13,7 @@ interface Props {
 const { flow } = Astro.props;
 
 /** The WSI carries the sketch's "YML T…", so the inspector opens on it. */
-const defaultNode = 'wsi';
+const defaultNode = flow.nodes.find((n) => n.service === 'web-service-interface')?.id ?? flow.nodes[0].id;
 const defaultTxn = 1;
 
 // Only what the script needs to switch state; everything visible is already rendered.

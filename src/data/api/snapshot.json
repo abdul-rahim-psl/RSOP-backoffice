@@ -1,0 +1,13 @@
+{
+  "baseUrl": "http://10.0.70.144:9991",
+  "fetchedAt": "2026-10-21T16:08:16Z",
+  "responses": {
+    "/api/v1/billInquiryFlow": {
+      "billInquiryFlow": "Start<-->raast-api-gateway<-->mpg-incoming-billing-service<-->web-service-interface<-->queue-processor<-->rest-handler<-->fbr-biller-mock-->End"
+    },
+    "/api/v1/billPaymentFlow": {
+      "billPaymentFlow1": "Start-->raast-->GET PACS008-->notification-service-->notification-broker-service-->receiving-service<-->Post PACS002 AUTH<-->web-service-interface<-->queue-processor<-->rest-handler<-->raast-->END",
+      "billPaymentFlow2": "Start-->raast-->GET PACS002 ACSP-->notification-service-->notification-broker-service-->receiving-service-->saf-dispatcher<-->saf-consumer<-->fbr-biller-mock-->END"
+    }
+  }
+}

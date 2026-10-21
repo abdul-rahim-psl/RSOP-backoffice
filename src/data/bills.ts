@@ -71,7 +71,7 @@ export const billRows: BillRow[] = [
     amount: null,
     payment: 'IN FLIGHT',
     marking: null,
-    traces: [{ label: 'Inquiry 4', href: traceHref('inquiry', 4) }],
+    traces: [],
   },
   {
     time: '15:57:40',
@@ -82,7 +82,7 @@ export const billRows: BillRow[] = [
     amount: wb2.amount,
     payment: 'AWAITING_ACSP',
     marking: null,
-    traces: [{ label: 'Payment 4', href: traceHref('payment', 4) }],
+    traces: [],
   },
   {
     time: '15:55:31',
@@ -105,7 +105,7 @@ export const billRows: BillRow[] = [
     payment: 'DONE',
     marking: 'COMPLETE',
     note: 'Marked on the second attempt',
-    traces: [{ label: 'Payment 3', href: traceHref('payment', 3) }],
+    traces: [],
   },
   {
     time: '15:49:47',
@@ -129,10 +129,7 @@ export const billRows: BillRow[] = [
     payment: 'REJECTED',
     marking: null,
     note: 'Paid PKR 1,200.00: amount does not match',
-    traces: [
-      { label: 'Inquiry 2', href: traceHref('inquiry', 2) },
-      { label: 'Payment 2', href: traceHref('payment', 2) },
-    ],
+    traces: [],
   },
   {
     time: '15:44:18',
@@ -154,7 +151,7 @@ export const billRows: BillRow[] = [
     amount: null,
     payment: 'NOT FOUND',
     marking: null,
-    traces: [{ label: 'Inquiry 3', href: traceHref('inquiry', 3) }],
+    traces: [],
   },
   {
     time: '15:39:02',

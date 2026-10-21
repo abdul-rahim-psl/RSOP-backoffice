@@ -1,7 +1,7 @@
 ---
 import Icon from '../Icon.astro';
 import ToneIcon from '../ToneIcon.astro';
-import type { Flow } from '../../lib/flow';
+import { isRound, type Flow } from '../../lib/flow';
 import { flows } from '../../data/flows/index';
 
 interface Props {
@@ -25,7 +25,7 @@ const { flow } = Astro.props;
                 {f.id === flow.id && <Icon name="check" size={12} />}
               </span>
               <span class="fl-name">{f.nav}</span>
-              <span class="fl-meta">{f.nodes.length} steps</span>
+              <span class="fl-meta">{f.nodes.filter((n) => !isRound(n)).length} steps</span>
             </a>
           </li>
         ))
@@ -35,7 +35,7 @@ const { flow } = Astro.props;
 
   <section class="rail-sec" aria-labelledby="txns-h">
     <h2 class="seclabel" id="txns-h">Transactions</h2>
-    <p class="rail-hint">Sample runs of this flow. Pick one to replay it on the canvas.</p>
+    <p class="rail-hint">{flow.txns.length === 1 ? 'A sample run of this flow. Pick it to replay it on the canvas.' : 'Sample runs of this flow. Pick one to replay it on the canvas.'}</p>
     <ul class="txn-list">
       {
         flow.txns.map((t) => (
