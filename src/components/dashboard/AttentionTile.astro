@@ -1,0 +1,105 @@
+---
+import Icon from '../Icon.astro';
+import ToneIcon from '../ToneIcon.astro';
+import type { Tone } from '../../lib/flow';
+
+interface Props {
+  tone: Tone;
+  value: string;
+  label: string;
+  note: string;
+  href: string;
+}
+
+const { tone, value, label, note, href } = Astro.props;
+---
+
+<a class="att glass" href={href} data-tone={tone}>
+  <span class="att-icon"><ToneIcon tone={tone} /></span>
+  <span class="att-body">
+    <span class="att-top"><b class="att-val">{value}</b><span class="att-label">{label}</span></span>
+    <span class="att-note">{note}</span>
+  </span>
+  <Icon name="arrow" size={16} class="att-go" />
+</a>
+
+<style>
+  .att {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    color: var(--ink);
+    text-decoration: none;
+    transition:
+      background 0.15s,
+      border-color 0.15s;
+  }
+
+  .att:hover {
+    border-color: var(--stroke-strong);
+    background: var(--hover);
+  }
+
+  [data-tone='ok'] {
+    --tone: var(--ok);
+  }
+  [data-tone='fail'] {
+    --tone: var(--fail);
+  }
+  [data-tone='wait'] {
+    --tone: var(--wait);
+  }
+  [data-tone='info'] {
+    --tone: var(--info);
+  }
+
+  .att-icon {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--tone) 16%, transparent);
+    color: var(--tone);
+  }
+
+  .att-icon :global(.tone-icon) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .att-body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .att-top {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .att-val {
+    font-size: 1.45rem;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .att-label {
+    font-weight: 800;
+  }
+
+  .att-note {
+    color: var(--mut);
+    font-size: 0.78rem;
+  }
+
+  .att :global(.att-go) {
+    flex: 0 0 auto;
+    margin-left: auto;
+    color: var(--mut);
+  }
+</style>

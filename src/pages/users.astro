@@ -1,0 +1,430 @@
+---
+import App from '../layouts/App.astro';
+import Icon from '../components/Icon.astro';
+import StatusPill from '../components/StatusPill.astro';
+import { initials, me, permissions, roles, users, type Role, type UserStatus } from '../data/users';
+import type { Tone } from '../lib/flow';
+
+const statusTone: Record<UserStatus, Tone> = { Active: 'ok', Invited: 'wait', Disabled: 'fail' };
+const roleList: Role[] = roles.map((r) => r.role);
+const count = (role: Role) => users.filter((u) => u.role === role).length;
+---
+
+<App title="Users" description="Who can sign in to the RSOP back office, and what each role may do. Mock data.">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Back office</p>
+      <h1 class="title">Users<span class="pd">.</span></h1>
+      <p>Who can sign in to the back office, and what each role may do.</p>
+    </div>
+    <button class="btn primary" type="button" data-invite>
+      <Icon name="plus" size={16} />
+      Invite user
+    </button>
+  </div>
+
+  <div class="filters" data-users>
+    <label class="search">
+      <Icon name="search" size={16} />
+      <span class="sr-only">Search users</span>
+      <input class="input" type="search" placeholder="Search name or email" autocomplete="off" data-search />
+    </label>
+    <div class="chips" role="group" aria-label="Show users by role">
+      <button class="chip" type="button" data-role="all" aria-pressed="true">All <span class="count">{users.length}</span></button>
+      {
+        roleList.map((r) => (
+          <button class="chip" type="button" data-role={r} aria-pressed="false">
+            {r} <span class="count">{count(r)}</span>
+          </button>
+        ))
+      }
+    </div>
+  </div>
+  <p class="sr-only" aria-live="polite" data-user-status></p>
+
+  <div class="table-wrap">
+    <table class="table people">
+      <caption class="sr-only">Back-office users</caption>
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Role</th>
+          <th scope="col">Status</th>
+          <th scope="col">Last active</th>
+          <th scope="col"><span class="sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          users.map((u) => (
+            <tr data-user data-role={u.role} data-text={`${u.name} ${u.email}`.toLowerCase()}>
+              <td>
+                <span class="person">
+                  <span class="avatar" data-role={u.role} aria-hidden="true">
+                    {initials(u.name)}
+                  </span>
+                  <span>
+                    <span class="name">
+                      {u.name}
+                      {u.id === me.id && <span class="you">you</span>}
+                    </span>
+                    <span class="mail">{u.email}</span>
+                  </span>
+                </span>
+              </td>
+              <td>
+                <span class="role" data-role={u.role}>
+                  {u.role}
+                </span>
+              </td>
+              <td>
+                <StatusPill tone={statusTone[u.status]} word={u.status} />
+              </td>
+              <td class="muted">{u.lastActive}</td>
+              <td class="actions">
+                <button
+                  class="edit"
+                  type="button"
+                  data-edit
+                  data-name={u.name}
+                  data-email={u.email}
+                  data-role={u.role}
+                  aria-label={`Edit ${u.name}`}
+                >
+                  Edit
+                </button>
+              </td>
+            </tr>
+          ))
+        }
+        <tr class="empty" data-empty hidden>
+          <td colspan="5">No users match.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section aria-labelledby="roles-h">
+    <div class="section-head">
+      <h2 id="roles-h">Roles and permissions<span class="pd">.</span></h2>
+      <p>Placeholders for KJ to confirm: four roles, six permissions.</p>
+    </div>
+
+    <ul class="role-cards">
+      {
+        roles.map((r) => (
+          <li class="glass">
+            <span class="role" data-role={r.role}>
+              {r.role}
+            </span>
+            <p>{r.summary}</p>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="table-wrap">
+      <table class="table matrix">
+        <caption class="sr-only">What each role may do</caption>
+        <thead>
+          <tr>
+            <th scope="col">Permission</th>
+            {roleList.map((r) => <th scope="col" class="c">{r}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {
+            permissions.map((p) => (
+              <tr>
+                <th scope="row">{p.label}</th>
+                {roleList.map((r) =>
+                  p.roles.includes(r) ? (
+                    <td class="c yes">
+                      <Icon name="check" size={16} />
+                      <span class="sr-only">Allowed</span>
+                    </td>
+                  ) : (
+                    <td class="c no">
+                      <span aria-hidden="true">—</span>
+                      <span class="sr-only">Not allowed</span>
+                    </td>
+                  ),
+                )}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <dialog class="dlg glass" aria-labelledby="dlg-h" data-dialog>
+    <form method="dialog" class="dlg-form" data-dialog-form>
+      <h2 id="dlg-h" data-dialog-title>Invite user</h2>
+      <label class="field">
+        <span>Name</span>
+        <input class="input" type="text" required autocomplete="off" data-f="name" />
+      </label>
+      <label class="field">
+        <span>Email</span>
+        <input class="input" type="email" required autocomplete="off" placeholder="name@rsop.example" data-f="email" />
+      </label>
+      <label class="field">
+        <span>Role</span>
+        <select class="input" data-f="role">
+          {roleList.map((r) => <option value={r}>{r}</option>)}
+        </select>
+      </label>
+      <p class="dlg-note" data-dialog-note hidden>
+        <Icon name="info" size={16} />
+        <span>Nothing was sent or saved: this draft has no backend.</span>
+      </p>
+      <div class="dlg-actions">
+        <button class="btn" type="button" data-dialog-close>Cancel</button>
+        <button class="btn primary" type="submit" data-dialog-submit>Send invite</button>
+      </div>
+    </form>
+  </dialog>
+</App>
+
+<script>
+  import '../scripts/users';
+</script>
+
+<style>
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .search {
+    position: relative;
+    flex: 0 1 320px;
+  }
+
+  .search :global(.icon) {
+    position: absolute;
+    top: 50%;
+    left: 13px;
+    color: var(--faint);
+    transform: translateY(-50%);
+  }
+
+  .search .input {
+    padding-left: 38px;
+    border-radius: 999px;
+  }
+
+  .people {
+    min-width: 680px;
+  }
+
+  .person {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  [data-role='Admin'] {
+    --role: var(--c-violet);
+  }
+  [data-role='Operator'] {
+    --role: var(--c-blue);
+  }
+  [data-role='Designer'] {
+    --role: var(--c-pink);
+  }
+  [data-role='Viewer'] {
+    --role: var(--c-grey);
+  }
+
+  .avatar {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid color-mix(in srgb, var(--role) 55%, transparent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--role) 20%, transparent);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+  }
+
+  .name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+  }
+
+  .you {
+    padding: 0 7px;
+    border: 1px solid var(--stroke-strong);
+    border-radius: 999px;
+    color: var(--mut);
+    font-size: 0.66rem;
+    font-weight: 800;
+  }
+
+  .mail {
+    display: block;
+    color: var(--mut);
+    font-size: 0.78rem;
+  }
+
+  .role {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+
+  .role::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--role);
+  }
+
+  .actions {
+    text-align: right;
+  }
+
+  .edit {
+    padding: 5px 12px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .edit:hover {
+    color: var(--ink);
+    background: var(--hover);
+  }
+
+  .empty td {
+    padding: 22px 14px;
+    color: var(--mut);
+    text-align: center;
+  }
+
+  .role-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .role-cards li {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+  }
+
+  .role-cards p {
+    color: var(--mut);
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+
+  .matrix {
+    min-width: 560px;
+  }
+
+  .matrix th[scope='row'] {
+    color: var(--ink);
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .c {
+    width: 110px;
+    text-align: center;
+  }
+
+  .yes {
+    color: var(--ok-ink);
+  }
+
+  .no {
+    color: var(--faint);
+  }
+
+  .dlg {
+    width: min(440px, calc(100vw - 32px));
+    padding: 0;
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+
+  .dlg::backdrop {
+    background: rgba(5, 7, 12, 0.6);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+  }
+
+  .dlg-form {
+    display: grid;
+    gap: 14px;
+    padding: 22px;
+  }
+
+  .dlg-form h2 {
+    font-family: var(--font-serif);
+    font-size: 1.6rem;
+    font-weight: 500;
+  }
+
+  .dlg-note {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--wait) 45%, transparent);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--wait) 10%, transparent);
+    color: var(--ink-2);
+    font-size: 0.84rem;
+  }
+
+  .dlg-note[hidden] {
+    display: none;
+  }
+
+  .dlg-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  @media (max-width: 900px) {
+    .role-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 480px) {
+    .role-cards {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .search {
+      flex-basis: 100%;
+    }
+  }
+</style>

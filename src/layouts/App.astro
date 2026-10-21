@@ -1,0 +1,36 @@
+---
+import Base from './Base.astro';
+import AppHeader from '../components/AppHeader.astro';
+import Icon from '../components/Icon.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** The Designer fills the viewport like a desktop app and has no page footer. */
+  app?: boolean;
+}
+
+const { title, description, app = false } = Astro.props;
+---
+
+<Base title={title} description={description} bodyClass={app ? 'app' : undefined}>
+  <AppHeader />
+  {
+    app ? (
+      <main id="main">
+        <slot />
+      </main>
+    ) : (
+      <main class="page" id="main">
+        <slot />
+        <p class="foot-note">
+          <Icon name="info" size={15} />
+          <span>
+            <strong>First draft on mock data.</strong> Nothing here is connected to RSOP, Raast or a biller. Every person,
+            bank, bill and figure is fictional. Built from KJ's HLD sketch and the Open Connect demo doc.
+          </span>
+        </p>
+      </main>
+    )
+  }
+</Base>

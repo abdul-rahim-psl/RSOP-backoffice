@@ -1,0 +1,172 @@
+---
+import '../styles/dashboard.css';
+import App from '../layouts/App.astro';
+import Icon from '../components/Icon.astro';
+import StatTile from '../components/dashboard/StatTile.astro';
+import AttentionTile from '../components/dashboard/AttentionTile.astro';
+import HourlyChart from '../components/dashboard/HourlyChart.astro';
+import FunnelChart from '../components/dashboard/FunnelChart.astro';
+import TypeChart from '../components/dashboard/TypeChart.astro';
+import BillsTable from '../components/dashboard/BillsTable.astro';
+import { asOf, hourly, successRate, totals, yesterday } from '../data/dashboard';
+import { compactPkr, delta, int, pct } from '../lib/format';
+
+const vs = 'vs this time yesterday';
+const collected = delta(totals.collected, yesterday.collected);
+const inquiries = delta(totals.inquiries, yesterday.inquiries);
+const payments = delta(totals.payments, yesterday.payments);
+const rateChange = successRate - yesterday.successRate;
+const attempted = hourly.settled.map((s, i) => s + hourly.refused[i] + hourly.awaiting[i]);
+---
+
+<App title="Dashboard" description="Bill-pay stats and billing for the RSOP back office, on mock data.">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Back office</p>
+      <h1 class="title">Dashboard<span class="pd">.</span></h1>
+      <p>Bill-pay stats and billing for {asOf.day}.</p>
+    </div>
+    <p class="period"><Icon name="clock" size={15} />{asOf.short} · as of {asOf.time}</p>
+  </div>
+
+  <section aria-labelledby="stats-h">
+    <div class="section-head first">
+      <h2 id="stats-h">Bill-pay stats<span class="pd">.</span></h2>
+      <p>Every figure counts today only, up to {asOf.time}.</p>
+    </div>
+
+    <div class="kpis">
+      <StatTile
+        hero
+        label="Collected today"
+        value={compactPkr(totals.collected)}
+        sub={`${int(totals.acsp)} settled payments`}
+        delta={{ text: collected.text, good: collected.up, vs }}
+        trend={hourly.settled}
+      />
+      <StatTile
+        label="Bill inquiries"
+        value={int(totals.inquiries)}
+        delta={{ text: inquiries.text, good: inquiries.up, vs }}
+        trend={hourly.inquiries}
+      />
+      <StatTile label="Payments" value={int(totals.payments)} delta={{ text: payments.text, good: payments.up, vs }} trend={attempted} />
+      <StatTile
+        label="Success rate"
+        value={`${successRate.toFixed(1)}%`}
+        sub="Settled ÷ payments"
+        delta={{ text: `${rateChange >= 0 ? '+' : '−'}${Math.abs(rateChange).toFixed(1)} pt`, good: rateChange >= 0, vs }}
+      />
+    </div>
+
+    <div class="attention">
+      <p class="seclabel">Needs attention</p>
+      <div class="att-grid">
+        <AttentionTile
+          tone="fail"
+          value={int(totals.naut)}
+          label="Refused (NAUT)"
+          note={`${pct(totals.naut, totals.payments)} of payments; Raast sent RJCT`}
+          href="?status=refused#billing"
+        />
+        <AttentionTile
+          tone="wait"
+          value={int(totals.awaiting)}
+          label="Awaiting ACSP"
+          note="AUTH sent; settlement not confirmed yet"
+          href="?status=awaiting#billing"
+        />
+        <AttentionTile
+          tone="wait"
+          value={int(totals.retrying)}
+          label="Bill marking retrying"
+          note="Paid, but the biller has not confirmed"
+          href="?status=marking#billing"
+        />
+      </div>
+    </div>
+
+    <HourlyChart />
+
+    <div class="pair">
+      <FunnelChart />
+      <TypeChart />
+    </div>
+  </section>
+
+  <BillsTable />
+</App>
+
+<script>
+  import '../scripts/charts';
+  import '../scripts/billing';
+</script>
+
+<style>
+  .period {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    color: var(--ink-2);
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  .section-head.first {
+    margin-top: 6px;
+  }
+
+  .kpis {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .attention {
+    display: grid;
+    gap: 10px;
+    margin: 22px 0;
+  }
+
+  .att-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+  }
+
+  @media (max-width: 1080px) {
+    .kpis {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .kpis > :global(.hero) {
+      grid-column: 1 / -1;
+    }
+
+    .pair {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .att-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .kpis {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

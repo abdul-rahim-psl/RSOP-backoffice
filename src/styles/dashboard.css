@@ -1,0 +1,156 @@
+/* Chart chrome shared by the dashboard: card, legend, axis, table view and the hover tooltip. */
+
+.chart {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px 16px;
+}
+
+.chart-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+}
+
+.chart-head h3 {
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.chart-head p {
+  color: var(--mut);
+  font-size: 0.8rem;
+}
+
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.legend-row li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Legends mirror the mark: a small rect for bars. */
+.key {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--key);
+}
+
+.legend-row .tone-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--mut);
+}
+
+/* A mark's hover target is its whole band, so readers never have to land on a thin bar. */
+.mark {
+  cursor: default;
+}
+
+.mark:focus-visible {
+  outline: 2px solid var(--select);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.table-view {
+  font-size: 0.8rem;
+}
+
+.table-view summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mut);
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.table-view summary::-webkit-details-marker {
+  display: none;
+}
+
+.table-view summary:hover {
+  color: var(--ink);
+}
+
+.table-view[open] summary {
+  margin-bottom: 10px;
+}
+
+.table-view .table {
+  font-size: 0.8rem;
+}
+
+.table-view .table th,
+.table-view .table td {
+  padding: 7px 10px;
+}
+
+.chart-note {
+  color: var(--faint);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+/* The tooltip: the value leads, the series name follows, keyed by a short stroke. */
+.viz-tip {
+  position: fixed;
+  z-index: 60;
+  min-width: 150px;
+  max-width: 260px;
+  padding: 10px 12px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 10px;
+  background: var(--panel-solid);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font-size: 0.78rem;
+  pointer-events: none;
+}
+
+.viz-tip[hidden] {
+  display: none;
+}
+
+.viz-tip .tip-title {
+  margin-bottom: 6px;
+  color: var(--mut);
+  font-weight: 800;
+}
+
+.viz-tip .tip-row {
+  display: grid;
+  grid-template-columns: 12px auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-tip .tip-key {
+  width: 12px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: var(--key, var(--mut));
+}
+
+.viz-tip .tip-val {
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.viz-tip .tip-label {
+  color: var(--mut);
+  font-weight: 700;
+}

@@ -1,0 +1,75 @@
+---
+import Icon from '../Icon.astro';
+import ToneIcon from '../ToneIcon.astro';
+import { nodeById, type Flow } from '../../lib/flow';
+import { since } from '../../lib/format';
+
+interface Props {
+  flow: Flow;
+  /** Shown before the script runs, so the default view never flashes empty. */
+  defaultTxn: number;
+}
+
+const { flow, defaultTxn } = Astro.props;
+const on = (n: number) => (n === defaultTxn ? '' : undefined);
+const byId = nodeById(flow);
+---
+
+<section class="timeline" aria-labelledby="tl-h">
+  <div class="tl-head">
+    <h2 class="seclabel" id="tl-h">Timeline</h2>
+    {
+      flow.txns.map((t) => (
+        <p class="tl-which" data-txn={t.n} data-on={on(t.n)}>
+          <span class="tl-n mono">{t.n}</span>
+          <span class="tl-ref mono">{t.ref}</span>
+          <span class="tl-started">started {t.started}</span>
+          <span class="txn-out" data-tone={t.tone}>
+            <ToneIcon tone={t.tone} />
+            {t.outcome}
+          </span>
+        </p>
+      ))
+    }
+    <div class="tl-controls" role="group" aria-label="Replay">
+      <button class="tl-btn" type="button" data-act="first" aria-label="First event"><Icon name="first" size={16} /></button>
+      <button class="tl-btn" type="button" data-act="prev" aria-label="Previous event"><Icon name="prev" size={16} /></button>
+      <button class="tl-btn play" type="button" data-act="play" aria-label="Play">
+        <span class="when-paused"><Icon name="play" size={15} /></span>
+        <span class="when-playing"><Icon name="pause" size={16} /></span>
+      </button>
+      <button class="tl-btn" type="button" data-act="next" aria-label="Next event"><Icon name="next" size={16} /></button>
+      <button class="tl-btn" type="button" data-act="last" aria-label="Last event"><Icon name="last" size={16} /></button>
+      <span class="tl-count mono" data-tl-count></span>
+      <button class="tl-clear" type="button" data-act="clear">Clear</button>
+    </div>
+  </div>
+
+  <p class="tl-empty" data-tl-empty hidden>
+    <Icon name="info" size={16} />
+    Pick a transaction on the left to replay it here, event by event.
+  </p>
+
+  <div class="tl-body">
+    {
+      flow.txns.map((t) => (
+        <ol class="tl-track" data-txn={t.n} data-on={on(t.n)} aria-label={`Transaction ${t.n} events`}>
+          {t.events.map((ev, i) => (
+            <li class="stop" data-i={i} data-tone={ev.tone} style={`--p:${t.events.length > 1 ? i / (t.events.length - 1) : 0}`}>
+              <span class="stop-dot">
+                <ToneIcon tone={ev.tone} />
+              </span>
+              <span class="stop-time mono">{since(ev.at)}</span>
+              <span class="stop-text">
+                <b>{byId.get(ev.node)?.label}</b> · {ev.title}. {ev.text}
+              </span>
+            </li>
+          ))}
+        </ol>
+      ))
+    }
+    <input class="tl-range" type="range" min="0" max="0" value="0" step="1" aria-label="Timeline position" data-tl-range />
+  </div>
+
+  <p class="tl-caption" aria-live="polite" data-tl-caption></p>
+</section>

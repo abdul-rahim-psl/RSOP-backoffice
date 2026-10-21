@@ -1,0 +1,20 @@
+---
+import App from '../../layouts/App.astro';
+import Designer from '../../components/designer/Designer.astro';
+import { flows } from '../../data/flows/index';
+import type { Flow } from '../../lib/flow';
+
+export function getStaticPaths() {
+  return flows.map((flow) => ({ params: { flow: flow.id }, props: { flow } }));
+}
+
+interface Props {
+  flow: Flow;
+}
+
+const { flow } = Astro.props;
+---
+
+<App title={`Designer · ${flow.name}`} description={flow.summary} app>
+  <Designer flow={flow} />
+</App>

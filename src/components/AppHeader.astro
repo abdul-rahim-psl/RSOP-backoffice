@@ -1,0 +1,233 @@
+---
+import Brand from './Brand.astro';
+import Icon, { type IconName } from './Icon.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import { initials, me } from '../data/users';
+
+const path = Astro.url.pathname;
+const links: { href: string; match: string; label: string; icon: IconName }[] = [
+  { href: '/dashboard/', match: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { href: '/designer/inquiry/', match: '/designer', label: 'Designer', icon: 'designer' },
+  { href: '/users/', match: '/users', label: 'Users', icon: 'users' },
+];
+const current = (match: string) => (path.startsWith(match) ? 'page' : undefined);
+---
+
+<header class="app-header">
+  <Brand />
+
+  <nav class="nav" aria-label="Back office">
+    {
+      links.map((l) => (
+        <a href={l.href} aria-current={current(l.match)}>
+          <Icon name={l.icon} size={16} />
+          {l.label}
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="tools">
+    <span class="mock" title="Nothing on these screens is connected to a live RSOP">
+      <Icon name="flag" size={14} />
+      <span>Mock data</span>
+    </span>
+    <ThemeToggle />
+    <button class="me" type="button" popovertarget="me-menu" aria-label={`${me.name}, account menu`}>
+      <span aria-hidden="true">{initials(me.name)}</span>
+    </button>
+    <button class="menu-btn" type="button" popovertarget="nav-menu" aria-label="Menu">
+      <Icon name="menu" size={18} />
+    </button>
+  </div>
+</header>
+
+<div id="me-menu" class="pop glass" popover>
+  <p class="who">{me.name}</p>
+  <p class="mail">{me.email}</p>
+  <p class="role"><span class="pill" data-tone="info">{me.role}</span></p>
+  <a class="pop-link" href="/"><Icon name="logout" size={16} />Sign out</a>
+</div>
+
+<div id="nav-menu" class="pop glass" popover>
+  <p class="seclabel">Back office</p>
+  {
+    links.map((l) => (
+      <a class="pop-link" href={l.href} aria-current={current(l.match)}>
+        <Icon name={l.icon} size={16} />
+        {l.label}
+      </a>
+    ))
+  }
+  <p class="mock-line"><Icon name="flag" size={14} />Mock data: nothing here is live</p>
+</div>
+
+<style>
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    height: var(--header-h);
+    padding: 0 var(--gutter);
+    background: color-mix(in srgb, var(--bg) 84%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--stroke);
+  }
+
+  .nav {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav a,
+  .pop-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--mut);
+    font-size: 0.86rem;
+    font-weight: 800;
+    text-decoration: none;
+    transition:
+      color 0.15s,
+      background 0.15s;
+  }
+
+  .nav a:hover,
+  .pop-link:hover {
+    color: var(--ink);
+    background: var(--hover);
+  }
+
+  .nav a[aria-current='page'],
+  .pop-link[aria-current='page'] {
+    color: var(--ink);
+    border-color: var(--stroke-strong);
+    background: var(--raised);
+  }
+
+  .tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+
+  .mock {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px;
+    border: 1px dashed color-mix(in srgb, var(--wait) 60%, transparent);
+    border-radius: 999px;
+    color: var(--wait-ink);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .me {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--stroke-strong);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--c-violet) 22%, transparent);
+    color: var(--ink);
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+
+  .menu-btn {
+    display: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .pop {
+    inset: calc(var(--header-h) + 8px) var(--gutter) auto auto;
+    width: min(270px, calc(100vw - 2 * var(--gutter)));
+    margin: 0;
+    padding: 14px 10px 10px;
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+
+  .pop .seclabel {
+    margin: 0 8px 8px;
+  }
+
+  .who {
+    margin: 0 8px;
+    font-weight: 900;
+  }
+
+  .mail {
+    margin: 0 8px;
+    color: var(--mut);
+    font-size: 0.8rem;
+  }
+
+  .role {
+    margin: 8px 8px 10px;
+  }
+
+  .pop-link {
+    display: flex;
+    width: 100%;
+    border-radius: 10px;
+    font-size: 0.92rem;
+  }
+
+  .mock-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 8px 2px;
+    padding-top: 10px;
+    border-top: 1px solid var(--stroke);
+    color: var(--wait-ink);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  @media (max-width: 760px) {
+    .nav,
+    .mock {
+      display: none;
+    }
+
+    .menu-btn {
+      display: grid;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .app-header {
+      gap: 12px;
+    }
+
+    .tools {
+      gap: 8px;
+    }
+  }
+</style>

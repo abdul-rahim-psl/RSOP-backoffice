@@ -1,0 +1,215 @@
+---
+import Icon from '../Icon.astro';
+import ToneIcon from '../ToneIcon.astro';
+import { hourly, hours } from '../../data/dashboard';
+
+// Settled and refused only: the validator failed a third (awaiting) colour beside refused, so awaiting lives in
+// the tooltip, the table and its own tile.
+const totals = hours.map((_, i) => hourly.settled[i] + hourly.refused[i]);
+const peak = Math.max(...totals);
+const peakAt = totals.indexOf(peak);
+const top = Math.ceil(peak / 50) * 50;
+const ticks = Array.from({ length: top / 50 + 1 }, (_, i) => i * 50);
+const until = (h: string) => `${String(Number(h.slice(0, 2)) + 1).padStart(2, '0')}:00`;
+
+const tip = (i: number) =>
+  JSON.stringify({
+    title: `${hours[i]}–${until(hours[i])}`,
+    rows: [
+      { value: String(hourly.settled[i]), label: 'Settled (ACSP)', key: 'var(--viz-settled)' },
+      { value: String(hourly.refused[i]), label: 'Refused (NAUT)', key: 'var(--viz-refused)' },
+      ...(hourly.awaiting[i] ? [{ value: String(hourly.awaiting[i]), label: 'Awaiting ACSP, not shown' }] : []),
+    ],
+  });
+---
+
+<figure class="chart glass hourly">
+  <div class="chart-head">
+    <h3>Payments per hour</h3>
+    <p>pacs.008 received today, by outcome</p>
+  </div>
+
+  <ul class="legend-row">
+    <li><span class="key" style="--key: var(--viz-settled)"></span><ToneIcon tone="ok" />Settled (ACSP)</li>
+    <li><span class="key" style="--key: var(--viz-refused)"></span><ToneIcon tone="fail" />Refused (NAUT)</li>
+  </ul>
+
+  <div class="plot" style={`--top:${top}`}>
+    <div class="grid" aria-hidden="true">
+      {
+        ticks.map((t) => (
+          <span class="gl" style={`--v:${t}`}>
+            <span class="tick mono">{t}</span>
+          </span>
+        ))
+      }
+    </div>
+    <ol class="cols">
+      {
+        hours.map((h, i) => (
+          <li
+            class="col mark"
+            tabindex="0"
+            style={`--total:${totals[i]}`}
+            data-tip={tip(i)}
+            aria-label={`${h} to ${until(h)}: ${hourly.settled[i]} settled, ${hourly.refused[i]} refused${hourly.awaiting[i] ? `, ${hourly.awaiting[i]} awaiting ACSP` : ''}`}
+          >
+            <span class="stack">
+              <span class="seg refused" style={`--n:${hourly.refused[i]}`} />
+              <span class="seg settled" style={`--n:${hourly.settled[i]}`} />
+            </span>
+            {i === peakAt && <span class="peak">{peak}</span>}
+            <span class="xl mono">{h}</span>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  <p class="chart-note">
+    The 5 payments still awaiting ACSP all arrived in the 15:00 hour. They are counted in the tooltip and the table, not
+    stacked.
+  </p>
+
+  <details class="table-view">
+    <summary><Icon name="table" size={15} />Show as a table</summary>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Hour</th><th class="num">Settled</th><th class="num">Refused</th><th class="num">Awaiting ACSP</th><th class="num">Total</th></tr>
+        </thead>
+        <tbody>
+          {
+            hours.map((h, i) => (
+              <tr>
+                <td class="mono">{h}–{until(h)}</td>
+                <td class="num">{hourly.settled[i]}</td>
+                <td class="num">{hourly.refused[i]}</td>
+                <td class="num">{hourly.awaiting[i]}</td>
+                <td class="num">{hourly.settled[i] + hourly.refused[i] + hourly.awaiting[i]}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<style>
+  /* --head leaves room above the top gridline for the peak's label. */
+  .plot {
+    --axis: 24px;
+    --gutter: 36px;
+    --head: 20px;
+    position: relative;
+    height: 250px;
+  }
+
+  .grid {
+    position: absolute;
+    inset: var(--head) 0 var(--axis) var(--gutter);
+  }
+
+  .gl {
+    position: absolute;
+    right: 0;
+    bottom: calc(var(--v) / var(--top) * 100%);
+    left: 0;
+    border-top: 1px solid var(--viz-grid);
+  }
+
+  .gl:first-child {
+    border-top-color: var(--viz-axis);
+  }
+
+  .tick {
+    position: absolute;
+    right: calc(100% + 8px);
+    bottom: -7px;
+    color: var(--faint);
+    font-size: 0.68rem;
+  }
+
+  .cols {
+    position: absolute;
+    inset: var(--head) 0 0 var(--gutter);
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+
+  .col {
+    position: relative;
+    border-radius: 8px;
+  }
+
+  .col:hover,
+  .col:focus-visible {
+    background: var(--raised);
+  }
+
+  /* Thin columns (≤ 24px), square at the baseline, rounded at the data end; a 2px surface gap between segments. */
+  .stack {
+    position: absolute;
+    bottom: var(--axis);
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: min(24px, 55%);
+    height: calc(var(--total) / var(--top) * (100% - var(--axis)));
+    transform: translateX(-50%);
+  }
+
+  .seg {
+    flex: var(--n) 1 0;
+    min-height: 0;
+  }
+
+  .seg.settled {
+    background: var(--viz-settled);
+  }
+
+  .seg.refused {
+    background: var(--viz-refused);
+  }
+
+  .stack > :first-child {
+    border-radius: 4px 4px 0 0;
+  }
+
+  .col:hover .seg,
+  .col:focus-visible .seg {
+    filter: brightness(1.18);
+  }
+
+  .peak {
+    position: absolute;
+    bottom: calc(var(--axis) + var(--total) / var(--top) * (100% - var(--axis)) + 6px);
+    left: 50%;
+    color: var(--ink);
+    font-size: 0.74rem;
+    font-weight: 900;
+    transform: translateX(-50%);
+  }
+
+  .xl {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    color: var(--faint);
+    font-size: 0.68rem;
+    transform: translateX(-50%);
+  }
+
+  @media (max-width: 560px) {
+    .xl {
+      font-size: 0.6rem;
+    }
+
+    .plot {
+      --gutter: 30px;
+      height: 220px;
+    }
+  }
+</style>

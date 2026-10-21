@@ -1,0 +1,160 @@
+---
+import Icon from '../Icon.astro';
+
+interface Props {
+  label: string;
+  value: string;
+  /** Signed change against a named period; colour follows whether up is good. */
+  delta?: { text: string; good: boolean; vs: string };
+  /** Hourly points for the sparkline; the latest is drawn in the accent. */
+  trend?: number[];
+  hero?: boolean;
+  sub?: string;
+}
+
+const { label, value, delta, trend, hero = false, sub } = Astro.props;
+
+const W = 120;
+const H = 32;
+const spark =
+  trend && trend.length > 1
+    ? (() => {
+        const max = Math.max(...trend);
+        const min = Math.min(...trend);
+        const x = (i: number) => 4 + (i / (trend.length - 1)) * (W - 8);
+        const y = (v: number) => H - 4 - ((v - min) / (max - min || 1)) * (H - 8);
+        const pts = trend.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+        return { line: `M${pts.join('L')}`, end: { x: x(trend.length - 1), y: y(trend[trend.length - 1]) } };
+      })()
+    : null;
+---
+
+<div class:list={['stat glass', { hero }]}>
+  <p class="label">{label}</p>
+  <p class="value">{value}</p>
+  {sub && <p class="sub">{sub}</p>}
+  {
+    delta && (
+      <p class="delta" data-good={String(delta.good)}>
+        <Icon name="arrow" size={13} class={delta.text.startsWith('−') ? 'down' : 'up'} />
+        <span>
+          <b>{delta.text}</b> {delta.vs}
+        </span>
+      </p>
+    )
+  }
+  {
+    spark && (
+      <div class="spark" aria-hidden="true">
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+          <path d={spark.line} />
+        </svg>
+        {/* An HTML dot, so stretching the line never squashes it into an ellipse. */}
+        <span class="dot" style={`left:${((spark.end.x / W) * 100).toFixed(2)}%;top:${((spark.end.y / H) * 100).toFixed(2)}%`} />
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .stat {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    min-width: 0;
+    padding: 16px 18px 14px;
+    border-radius: var(--radius);
+  }
+
+  .label {
+    color: var(--mut);
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  /* Proportional figures at display size; the same sans as everything else, never the serif. */
+  .value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  .hero .value {
+    font-size: clamp(2.8rem, 4.6vw, 3.6rem);
+    letter-spacing: -0.02em;
+  }
+
+  .sub {
+    color: var(--ink-2);
+    font-size: 0.84rem;
+    font-weight: 700;
+  }
+
+  .delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--mut);
+    font-size: 0.78rem;
+  }
+
+  .delta b {
+    font-weight: 900;
+  }
+
+  .delta[data-good='true'] b,
+  .delta[data-good='true'] :global(.icon) {
+    color: var(--ok-ink);
+  }
+
+  .delta[data-good='false'] b,
+  .delta[data-good='false'] :global(.icon) {
+    color: var(--fail-ink);
+  }
+
+  .delta :global(.up) {
+    transform: rotate(-45deg);
+  }
+
+  .delta :global(.down) {
+    transform: rotate(45deg);
+  }
+
+  .spark {
+    position: relative;
+    height: 32px;
+    margin-top: 8px;
+  }
+
+  .spark svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .spark path {
+    fill: none;
+    stroke: var(--viz-axis);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--panel-solid);
+    border-radius: 50%;
+    background: var(--viz-1);
+    transform: translate(-50%, -50%);
+  }
+
+  .hero .spark {
+    height: 44px;
+  }
+</style>

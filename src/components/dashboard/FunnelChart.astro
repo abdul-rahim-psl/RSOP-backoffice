@@ -1,0 +1,58 @@
+---
+import Icon from '../Icon.astro';
+import BarRows from './BarRows.astro';
+import { funnel } from '../../data/dashboard';
+import { int, pct } from '../../lib/format';
+
+// Ordered stages take the ordinal blue ramp (validated with --ordinal), so the order shows in the colour too.
+const rows = funnel.map((s, i) => {
+  const prev = funnel[i - 1];
+  const share = prev ? `${pct(s.value, prev.value)} of ${prev.label.toLowerCase()}` : undefined;
+  return {
+    label: s.label,
+    code: s.code,
+    value: s.value,
+    shown: int(s.value),
+    note: share,
+    color: `var(--viz-o${i + 1})`,
+    tip: {
+      title: s.code ? `${s.label} (${s.code})` : s.label,
+      rows: [
+        { value: int(s.value), label: 'today', key: `var(--viz-o${i + 1})` },
+        ...(share ? [{ value: pct(s.value, prev!.value), label: `of ${prev!.label.toLowerCase()}` }] : []),
+      ],
+    },
+  };
+});
+---
+
+<figure class="chart glass">
+  <div class="chart-head">
+    <h3>From inquiry to marked bill</h3>
+    <p>Each stage as a share of the one before</p>
+  </div>
+
+  <BarRows rows={rows} max={funnel[0].value} />
+
+  <details class="table-view">
+    <summary><Icon name="table" size={15} />Show as a table</summary>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Stage</th><th class="num">Today</th><th class="num">Of the stage before</th></tr></thead>
+        <tbody>
+          {
+            funnel.map((s, i) => (
+              <tr>
+                <td>
+                  {s.label} {s.code && <span class="mono muted">{s.code}</span>}
+                </td>
+                <td class="num">{int(s.value)}</td>
+                <td class="num">{i ? pct(s.value, funnel[i - 1].value) : '—'}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>

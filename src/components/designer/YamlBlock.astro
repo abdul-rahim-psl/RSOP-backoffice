@@ -1,0 +1,39 @@
+---
+import Icon from '../Icon.astro';
+import { toLines, toText, type Yaml } from '../../lib/yaml';
+
+interface Props {
+  value: Yaml;
+  /** Accessible name for the block, e.g. "WSI parameters". */
+  label: string;
+  copy?: boolean;
+}
+
+const { value, label, copy = false } = Astro.props;
+const lines = toLines(value);
+
+// Built as one string so template whitespace can never leak into the <pre>.
+const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+const html = lines
+  .map(
+    (l) =>
+      ' '.repeat(l.indent) +
+      l.toks.map((t) => (t.k === 'punct' ? esc(t.v) : `<span class="y-${t.k}">${esc(t.v)}</span>`)).join(''),
+  )
+  .join('\n');
+---
+
+<div class:list={['yaml-wrap', { 'has-bar': copy }]}>
+  {
+    copy && (
+      <div class="yaml-bar">
+        <span class="mono">YAML</span>
+        <button class="copy" type="button" data-copy={toText(lines)} aria-label={`Copy ${label} as YAML`}>
+          <Icon name="copy" size={14} />
+          <span data-copy-label>Copy</span>
+        </button>
+      </div>
+    )
+  }
+  <pre class="yaml" aria-label={label} tabindex="0"><code set:html={html} /></pre>
+</div>

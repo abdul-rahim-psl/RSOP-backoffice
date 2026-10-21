@@ -1,0 +1,40 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Extra class on <body>, for pages that size themselves to the viewport. */
+  bodyClass?: string;
+}
+
+const site = 'RSOP back office';
+const { title, description = 'First-draft back office for RSOP: dashboard, flow designer and users, on mock data.', bodyClass } = Astro.props;
+const pageTitle = title ? `${title} · ${site}` : site;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      // Runs before first paint, so a saved light theme never flashes dark first,
+      // and so CSS can hide the no-JavaScript fallbacks before they are ever seen.
+      document.documentElement.classList.add('js');
+      try {
+        if (localStorage.getItem('rsop-theme') === 'light') document.documentElement.dataset.theme = 'light';
+      } catch {}
+    </script>
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/eb-garamond.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body class={bodyClass}>
+    <slot />
+  </body>
+</html>

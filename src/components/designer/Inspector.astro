@@ -1,0 +1,128 @@
+---
+import Icon, { type IconName } from '../Icon.astro';
+import ToneIcon from '../ToneIcon.astro';
+import YamlBlock from './YamlBlock.astro';
+import type { Flow, NodeKind } from '../../lib/flow';
+import { since } from '../../lib/format';
+
+interface Props {
+  flow: Flow;
+  defaultNode: string;
+  defaultTxn: number;
+}
+
+const { flow, defaultNode, defaultTxn } = Astro.props;
+
+const icons: Record<NodeKind, IconName> = {
+  start: 'raast',
+  inbound: 'inbound',
+  wsi: 'wsi',
+  decision: 'decision',
+  wait: 'wait',
+  queue: 'queue',
+  rest: 'rest',
+  store: 'store',
+  end: 'biller',
+};
+const on = (id: string) => (id === defaultNode ? '' : undefined);
+---
+
+<aside class="inspector" id="inspector" aria-labelledby="insp-h">
+  <h2 class="sr-only" id="insp-h">Step details</h2>
+
+  {
+    flow.nodes.map((n) => (
+      <header class="insp-head" data-node={n.id} data-on={on(n.id)}>
+        <span class="kind-chip" data-family={n.family}>
+          <Icon name={n.id === 'rejected' ? 'reject' : icons[n.kind]} size={20} />
+        </span>
+        <div class="insp-name">
+          <h3>{n.label}</h3>
+          <p class:list={{ mono: !!n.template }}>{n.sub}</p>
+        </div>
+        <span class="origin" data-origin={n.origin}>
+          {n.origin === 'sketch' ? 'On the sketch' : 'From the doc'}
+        </span>
+      </header>
+    ))
+  }
+
+  <div class="tabs" role="tablist" aria-label="Step details">
+    <button class="tab" type="button" role="tab" id="tab-params" aria-controls="panel-params" aria-selected="true" data-tab="params">
+      Params
+    </button>
+    <button class="tab" type="button" role="tab" id="tab-debug" aria-controls="panel-debug" aria-selected="false" tabindex="-1" data-tab="debug">
+      Debug <span class="tab-count mono" data-debug-count></span>
+    </button>
+  </div>
+
+  <div class="panel" role="tabpanel" id="panel-params" aria-labelledby="tab-params" data-panel="params" data-on="">
+    {
+      flow.nodes.map((n) => (
+        <section class="insp-sec" data-node={n.id} data-on={on(n.id)}>
+          <h3 class="nojs-only">{n.label}</h3>
+          <p class="about">{n.about}</p>
+          {n.template && (
+            <p class="template">
+              <Icon name="wsi" size={15} />
+              <span>
+                Template <span class="mono">{n.template}</span>
+              </span>
+            </p>
+          )}
+          <p class="placeholder">
+            <Icon name="info" size={14} />
+            Placeholder values for the draft; no real configuration exists yet.
+          </p>
+          <YamlBlock value={n.params} label={`${n.label} parameters`} copy />
+        </section>
+      ))
+    }
+  </div>
+
+  <div class="panel" role="tabpanel" id="panel-debug" aria-labelledby="tab-debug" data-panel="debug">
+    <p class="dbg-none" data-dbg-none hidden>
+      <Icon name="info" size={16} />
+      Pick a transaction on the left to see what passed through this step.
+    </p>
+    {
+      flow.nodes.map((n) => (
+        <section class="insp-sec" data-node={n.id} data-on={on(n.id)}>
+          <h3 class="nojs-only">{n.label}</h3>
+          {flow.txns.map((t) => {
+            const evs = t.events.map((e, i) => ({ e, i })).filter(({ e }) => e.node === n.id);
+            return (
+              <div class="dbg" data-txn={t.n} data-on={t.n === defaultTxn ? '' : undefined}>
+                <p class="nojs-only dbg-txn">Transaction {t.n}</p>
+                {evs.length ? (
+                  <>
+                    {evs.map(({ e, i }) => (
+                      <article class="ev" data-i={i} data-tone={e.tone}>
+                        <header class="ev-head">
+                          <span class="ev-tone" data-tone={e.tone}>
+                            <ToneIcon tone={e.tone} />
+                          </span>
+                          <b>{e.title}</b>
+                          <span class="ev-meta mono">
+                            event {i + 1} · {since(e.at)}
+                          </span>
+                        </header>
+                        <p class="ev-text">{e.text}</p>
+                        {e.data && <YamlBlock value={e.data} label={`${n.label}, event ${i + 1} payload`} />}
+                      </article>
+                    ))}
+                    <p class="dbg-later" data-later>
+                      Not reached yet at this point in the timeline.
+                    </p>
+                  </>
+                ) : (
+                  <p class="dbg-never">Transaction {t.n} never passed through this step.</p>
+                )}
+              </div>
+            );
+          })}
+        </section>
+      ))
+    }
+  </div>
+</aside>

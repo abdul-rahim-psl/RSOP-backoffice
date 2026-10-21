@@ -1,0 +1,67 @@
+---
+import Icon from '../Icon.astro';
+import ToneIcon from '../ToneIcon.astro';
+import type { Flow } from '../../lib/flow';
+import { flows } from '../../data/flows/index';
+
+interface Props {
+  flow: Flow;
+}
+
+const { flow } = Astro.props;
+---
+
+<aside class="rail" aria-label="Flows and transactions">
+  <h1 class="dz-title">RSOP Designer<span class="pd">.</span></h1>
+
+  <nav class="rail-sec" aria-labelledby="flows-h">
+    <h2 class="seclabel" id="flows-h">Transaction flows</h2>
+    <ul class="flow-list">
+      {
+        flows.map((f) => (
+          <li>
+            <a class="flow-link" href={`/designer/${f.id}/`} aria-current={f.id === flow.id ? 'page' : undefined}>
+              <span class="tick" aria-hidden="true">
+                {f.id === flow.id && <Icon name="check" size={12} />}
+              </span>
+              <span class="fl-name">{f.nav}</span>
+              <span class="fl-meta">{f.nodes.length} steps</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <section class="rail-sec" aria-labelledby="txns-h">
+    <h2 class="seclabel" id="txns-h">Transactions</h2>
+    <p class="rail-hint">Sample runs of this flow. Pick one to replay it on the canvas.</p>
+    <ul class="txn-list">
+      {
+        flow.txns.map((t) => (
+          <li>
+            <button class="txn" type="button" data-txn={t.n} aria-pressed="false">
+              <span class="txn-n mono" aria-hidden="true">
+                {t.n}
+              </span>
+              <span class="txn-body">
+                <span class="txn-title">
+                  <span class="sr-only">Transaction {t.n}: </span>
+                  {t.title}
+                </span>
+                <span class="txn-detail">{t.detail}</span>
+                <span class="txn-meta mono">
+                  {t.started} · {t.ref}
+                </span>
+                <span class="txn-out" data-tone={t.tone}>
+                  <ToneIcon tone={t.tone} />
+                  {t.outcome}
+                </span>
+              </span>
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</aside>

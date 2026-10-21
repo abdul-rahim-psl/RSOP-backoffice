@@ -1,0 +1,44 @@
+---
+import '../../styles/designer.css';
+import Rail from './Rail.astro';
+import Canvas from './Canvas.astro';
+import Timeline from './Timeline.astro';
+import Inspector from './Inspector.astro';
+import type { Flow } from '../../lib/flow';
+
+interface Props {
+  flow: Flow;
+}
+
+const { flow } = Astro.props;
+
+/** The WSI carries the sketch's "YML T…", so the inspector opens on it. */
+const defaultNode = 'wsi';
+const defaultTxn = 1;
+
+// Only what the script needs to switch state; everything visible is already rendered.
+const client = {
+  id: flow.id,
+  nodes: flow.nodes.map((n) => ({ id: n.id, label: n.label })),
+  edges: flow.edges,
+  txns: flow.txns.map((t) => ({
+    n: t.n,
+    events: t.events.map((e) => ({ at: e.at, node: e.node, tone: e.tone, title: e.title, text: e.text })),
+  })),
+};
+const json = JSON.stringify(client).replace(/</g, '\\u003c');
+---
+
+<div class="designer" data-designer data-default-node={defaultNode} data-default-txn={defaultTxn}>
+  <Rail flow={flow} />
+  <div class="dz-main">
+    <Canvas flow={flow} />
+    <Timeline flow={flow} defaultTxn={defaultTxn} />
+  </div>
+  <Inspector flow={flow} defaultNode={defaultNode} defaultTxn={defaultTxn} />
+  <script type="application/json" data-flow set:html={json} />
+</div>
+
+<script>
+  import '../../scripts/designer';
+</script>

@@ -1,0 +1,169 @@
+---
+import Icon from '../Icon.astro';
+import StatusPill from '../StatusPill.astro';
+import { billRows, filterOf, filters, isCode, paymentTone, paymentWord } from '../../data/bills';
+import { pkr } from '../../lib/format';
+
+const counts = Object.fromEntries(filters.map((f) => [f.id, f.id === 'all' ? billRows.length : billRows.filter((r) => filterOf(r) === f.id).length]));
+---
+
+<section class="billing" id="billing" aria-labelledby="billing-h" data-billing>
+  <div class="section-head">
+    <h2 id="billing-h">Billing<span class="pd">.</span></h2>
+    <p>The day’s latest bills, newest first: each bill once, with where it stands now.</p>
+  </div>
+
+  <div class="chips" role="group" aria-label="Show bills by status">
+    {
+      filters.map((f) => (
+        <button class="chip" type="button" data-filter={f.id} aria-pressed={f.id === 'all' ? 'true' : 'false'}>
+          {f.label}
+          <span class="count">{counts[f.id]}</span>
+        </button>
+      ))
+    }
+  </div>
+  <p class="sr-only" aria-live="polite" data-bill-status></p>
+
+  <div class="table-wrap">
+    <table class="table bills">
+      <caption class="sr-only">Latest bills today</caption>
+      <thead>
+        <tr>
+          <th scope="col">Time</th>
+          <th scope="col">Bill</th>
+          <th scope="col">Inquiry ID</th>
+          <th scope="col" class="num">Amount</th>
+          <th scope="col">Payment</th>
+          <th scope="col">Bill marking</th>
+          <th scope="col">Trace</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          billRows.map((r) => (
+            <tr data-filter={filterOf(r)}>
+              <td class="mono time">{r.time}</td>
+              <td class="bill-cell">
+                <span class="bill">{r.type}</span>
+                <span class="sub mono">{r.ref}</span>
+                <span class="sub">{r.institution}</span>
+              </td>
+              <td class="mono">{r.inquiryId ?? <span class="none">none</span>}</td>
+              <td class="num">{r.amount === null ? <span class="none">—</span> : pkr(r.amount)}</td>
+              <td>
+                <StatusPill
+                  tone={paymentTone[r.payment]}
+                  code={isCode(r.payment) ? r.payment : undefined}
+                  word={paymentWord[r.payment]}
+                />
+                {r.note && <span class="note">{r.note}</span>}
+              </td>
+              <td>
+                {r.marking === 'COMPLETE' && <StatusPill tone="ok" code="COMPLETE" />}
+                {r.marking === 'PENDING' && <StatusPill tone="wait" code="PENDING" word="retrying" />}
+                {r.marking === null && <span class="none">—</span>}
+              </td>
+              <td class="traces">
+                {r.traces.length
+                  ? r.traces.map((t) => (
+                      <a href={t.href}>
+                        {t.label}
+                        <Icon name="arrow" size={13} />
+                      </a>
+                    ))
+                  : <span class="none">—</span>}
+              </td>
+            </tr>
+          ))
+        }
+        <tr class="empty" data-empty hidden>
+          <td colspan="7">No bills with this status today.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="chart-note">
+    Trace opens the sample transaction in the Designer. Rows without a trace have no sample transaction behind them.
+  </p>
+</section>
+
+<style>
+  .chips {
+    margin-bottom: 14px;
+  }
+
+  .bills {
+    min-width: 1000px;
+  }
+
+  /* IDs, times and amounts never break; on a phone the table scrolls sideways inside its frame instead. */
+  .bills td.mono,
+  .bills td.num {
+    white-space: nowrap;
+  }
+
+  .bill-cell {
+    min-width: 190px;
+  }
+
+  .time {
+    color: var(--mut);
+    font-size: 0.78rem;
+  }
+
+  .bill {
+    display: block;
+    font-weight: 800;
+  }
+
+  .sub {
+    display: block;
+    color: var(--mut);
+    font-size: 0.74rem;
+  }
+
+  .sub.mono {
+    font-size: 0.7rem;
+  }
+
+  .note {
+    display: block;
+    margin-top: 5px;
+    color: var(--mut);
+    font-size: 0.74rem;
+  }
+
+  .none {
+    color: var(--faint);
+  }
+
+  .traces {
+    white-space: nowrap;
+  }
+
+  .traces a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 10px;
+    color: var(--select);
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .traces a:hover {
+    text-decoration: underline;
+  }
+
+  .empty td {
+    padding: 22px 14px;
+    color: var(--mut);
+    text-align: center;
+  }
+
+  .chart-note {
+    margin-top: 10px;
+  }
+</style>

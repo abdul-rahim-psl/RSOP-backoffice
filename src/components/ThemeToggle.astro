@@ -1,0 +1,84 @@
+<button class="toggle" type="button" aria-label="Light mode" aria-pressed="false" title="Toggle light mode" data-theme-toggle>
+  <svg class="moon" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M20.5 14.3A8.5 8.5 0 1 1 9.7 3.5a6.8 6.8 0 0 0 10.8 10.8Z" />
+  </svg>
+  <svg class="sun" viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="12" r="4.2" />
+    <path
+      d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.55 1.55M17.15 17.15l1.55 1.55M5.3 18.7l1.55-1.55M17.15 6.85l1.55-1.55"
+    />
+  </svg>
+</button>
+
+<script>
+  const KEY = 'rsop-theme';
+  const root = document.documentElement;
+  const button = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+
+  const isLight = () => root.dataset.theme === 'light';
+
+  // Storage can be unavailable (private browsing, blocked cookies); the pick then lasts for this page only.
+  function save(theme: string) {
+    try {
+      localStorage.setItem(KEY, theme);
+    } catch {}
+  }
+
+  function apply(light: boolean) {
+    root.classList.add('theme-switching');
+    if (light) root.dataset.theme = 'light';
+    else delete root.dataset.theme;
+    button?.setAttribute('aria-pressed', String(light));
+    // Flush styles while transitions are off, so turning them back on animates nothing.
+    getComputedStyle(root).color;
+    setTimeout(() => root.classList.remove('theme-switching'));
+  }
+
+  button?.setAttribute('aria-pressed', String(isLight()));
+  button?.addEventListener('click', () => {
+    const light = !isLight();
+    apply(light);
+    save(light ? 'light' : 'dark');
+  });
+</script>
+
+<style>
+  .toggle {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--mut);
+    cursor: pointer;
+    transition:
+      color 0.15s,
+      background 0.15s;
+  }
+
+  .toggle:hover {
+    color: var(--ink);
+    background: var(--hover);
+  }
+
+  svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+  }
+
+  .sun,
+  :global([data-theme='light']) .moon {
+    display: none;
+  }
+
+  :global([data-theme='light']) .sun {
+    display: block;
+  }
+</style>

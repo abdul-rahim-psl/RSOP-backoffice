@@ -1,0 +1,73 @@
+---
+import type { Tone } from '../lib/flow';
+import ToneIcon from './ToneIcon.astro';
+
+interface Props {
+  tone: Tone;
+  /** The status as the system writes it, e.g. AWAITING_ACSP; set in mono. */
+  code?: string;
+  /** The plain word a reader needs, e.g. "Awaiting ACSP". */
+  word?: string;
+}
+
+const { tone, code, word } = Astro.props;
+---
+
+<span class="status" data-tone={tone}>
+  <ToneIcon tone={tone} />
+  {code && <span class="code">{code}</span>}
+  {word && <span class="word">{word}</span>}
+</span>
+
+<style>
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px 3px 4px;
+    border: 1px solid color-mix(in srgb, var(--tone) 42%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tone) 11%, transparent);
+    color: var(--ink);
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  .status[data-tone='ok'] {
+    --tone: var(--ok);
+  }
+
+  .status[data-tone='fail'] {
+    --tone: var(--fail);
+  }
+
+  .status[data-tone='wait'] {
+    --tone: var(--wait);
+  }
+
+  .status[data-tone='info'] {
+    --tone: var(--info);
+  }
+
+  .status :global(.tone-icon) {
+    width: 16px;
+    height: 16px;
+    padding: 2px;
+    border-radius: 50%;
+    background: var(--tone);
+    color: var(--bg);
+  }
+
+  .code {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+  }
+
+  .code + .word {
+    color: var(--mut);
+    font-weight: 700;
+  }
+</style>

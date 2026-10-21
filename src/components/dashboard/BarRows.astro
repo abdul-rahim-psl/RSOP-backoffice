@@ -1,0 +1,114 @@
+---
+interface Row {
+  label: string;
+  code?: string;
+  value: number;
+  /** The value as printed at the bar's tip. */
+  shown: string;
+  note?: string;
+  /** A CSS colour for the bar. */
+  color: string;
+  tip: { title: string; rows: { value: string; label: string; key?: string }[] };
+}
+
+interface Props {
+  rows: Row[];
+  max: number;
+}
+
+const { rows, max } = Astro.props;
+---
+
+<ol class="rows">
+  {
+    rows.map((r) => (
+      <li
+        class="row mark"
+        tabindex="0"
+        style={`--w:${(r.value / max).toFixed(4)};--bar:${r.color}`}
+        data-tip={JSON.stringify(r.tip)}
+        aria-label={`${r.label}${r.code ? ` (${r.code})` : ''}: ${r.shown}${r.note ? `, ${r.note}` : ''}`}
+      >
+        <span class="r-label">
+          {r.label}
+          {r.code && <span class="r-code mono">{r.code}</span>}
+        </span>
+        <span class="r-track">
+          <span class="r-bar" />
+          <span class="r-val">{r.shown}</span>
+        </span>
+        {r.note && <span class="r-note">{r.note}</span>}
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .rows {
+    display: grid;
+    gap: 6px;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(96px, 30%) minmax(0, 1fr);
+    align-items: center;
+    gap: 2px 14px;
+    padding: 6px 8px;
+    border-radius: 8px;
+  }
+
+  .row:hover,
+  .row:focus-visible {
+    background: var(--raised);
+  }
+
+  .r-label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 6px;
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+
+  .r-code {
+    color: var(--faint);
+    font-size: 0.68rem;
+    font-weight: 600;
+  }
+
+  /* The bar leaves room for its value at the tip; square at the baseline, rounded at the data end. */
+  .r-track {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .r-bar {
+    flex: 0 0 auto;
+    width: calc(var(--w) * (100% - 92px));
+    height: 20px;
+    border-radius: 0 4px 4px 0;
+    background: var(--bar);
+  }
+
+  .row:hover .r-bar,
+  .row:focus-visible .r-bar {
+    filter: brightness(1.15);
+  }
+
+  .r-val {
+    font-size: 0.8rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .r-note {
+    grid-column: 2;
+    color: var(--mut);
+    font-size: 0.72rem;
+  }
+</style>

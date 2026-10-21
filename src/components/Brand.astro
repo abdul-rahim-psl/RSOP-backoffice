@@ -1,0 +1,66 @@
+---
+interface Props {
+  href?: string;
+  size?: 'md' | 'lg';
+}
+
+const { href = '/dashboard/', size = 'md' } = Astro.props;
+---
+
+<a class:list={['brand', size]} href={href} aria-label="RSOP back office: dashboard">
+  <svg class="mark" viewBox="0 0 46 20" aria-hidden="true">
+    <path d="M7 10h4.5M19 10h3.5M30.5 10h4" stroke="currentColor" stroke-opacity=".4" stroke-width="1.4" />
+    <circle cx="4" cy="10" r="3" fill="var(--ok)" />
+    <rect x="11.5" y="5.5" width="7.5" height="9" rx="2.2" fill="var(--c-violet)" />
+    <rect x="22.5" y="5.5" width="8" height="9" rx="2.2" fill="var(--c-orange)" />
+    <circle cx="39.5" cy="10" r="3.2" fill="none" stroke="var(--c-green)" stroke-width="2.4" />
+  </svg>
+  <span class="word">RSOP <em>back office</em></span>
+</a>
+
+<style>
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+    text-decoration: none;
+    flex: 0 0 auto;
+  }
+
+  .mark {
+    width: 42px;
+    height: 18px;
+  }
+
+  .word {
+    font-weight: 900;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  .word em {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.12em;
+    letter-spacing: 0;
+  }
+
+  .lg .mark {
+    width: 56px;
+    height: 24px;
+  }
+
+  .lg .word {
+    font-size: 1.2rem;
+  }
+
+  /* On the narrowest phones the header needs the room more than the subtitle does. */
+  @media (max-width: 420px) {
+    .md .word em {
+      display: none;
+    }
+  }
+</style>
