@@ -8,7 +8,7 @@ import StatTile from '../dashboard/StatTile.astro';
 import AttentionTile from '../dashboard/AttentionTile.astro';
 import EntryDetail from './EntryDetail.astro';
 import { fetchLog, logs, summarize, type LogEntry, type LogId } from '../../data/api/bill-log';
-import { ago, duration, int, pct, pkt, pktTime, pktWhen } from '../../lib/format';
+import { ago, compactPkr, duration, int, pct, pkr, pkt, pktTime, pktWhen } from '../../lib/format';
 
 interface Props {
   log: LogId;
@@ -26,6 +26,10 @@ const list = src.entries;
 const sum = summarize(list);
 const rows = list.slice(0, SHOWN);
 const byId = Object.fromEntries(outcomes.map((o) => [o.id, o]));
+// Columns appear only when the log records them: the payment log carries amounts, the inquiry log the caller.
+const priced = list.some((q) => q.amount !== null);
+const hasCaller = rows.some((q) => q.ip || q.client);
+const cols = 5 + Number(priced) + Number(hasCaller);
 
 const pill = src.live
   ? { tone: 'ok', text: `Live · read ${pktTime(src.fetchedAt)}`, about: `Read from ${src.url} at ${pkt(src.fetchedAt)} PKT` }
@@ -41,7 +45,7 @@ const errorsNote = sum.errors
   .join(' · ');
 
 const searchText = (q: LogEntry) =>
-  [q.billRef, q.id, q.correlationId, q.requestId, q.ip, q.code, q.desc, q.sender, q.senderUser, q.receiver, q.client]
+  [q.billRef, q.billId, q.id, q.amount, q.correlationId, q.requestId, q.ip, q.code, q.desc, q.sender, q.senderUser, q.receiver, q.client]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
@@ -99,11 +103,19 @@ const searchText = (q: LogEntry) =>
           <h2 id="sum-h" class="sr-only">Summary</h2>
           <div class="kpis">
             <StatTile label={`${kind.Many} logged`} value={int(sum.total)} sub={`Since ${pktWhen(sum.oldest!, now)}`} />
-            <StatTile
-              label={kind.okKpi}
-              value={pct(sum.counts.returned, sum.total, 0)}
-              sub={`${int(sum.counts.returned)} of ${int(sum.total)} ${many}`}
-            />
+            {priced ? (
+              <StatTile
+                label="Collected"
+                value={compactPkr(sum.collected)}
+                sub={`${int(sum.counts.returned)} of ${int(sum.total)} ${many} ${kind.okKpi.toLowerCase()} · ${pct(sum.counts.returned, sum.total, 0)}`}
+              />
+            ) : (
+              <StatTile
+                label={kind.okKpi}
+                value={pct(sum.counts.returned, sum.total, 0)}
+                sub={`${int(sum.counts.returned)} of ${int(sum.total)} ${many}`}
+              />
+            )}
             <StatTile
               label="Typical reply time"
               value={sum.medianMs !== null ? duration(sum.medianMs) : '—'}
@@ -205,9 +217,10 @@ const searchText = (q: LogEntry) =>
                 <tr>
                   <th scope="col">Time</th>
                   <th scope="col">Bill reference</th>
+                  {priced && <th scope="col" class="num">Amount</th>}
                   <th scope="col">Result</th>
                   <th scope="col" class="num">Reply time</th>
-                  <th scope="col">Called from</th>
+                  {hasCaller && <th scope="col">Called from</th>}
                   <th scope="col">
                     <span class="sr-only">Details</span>
                   </th>
@@ -226,6 +239,7 @@ const searchText = (q: LogEntry) =>
                       </span>
                     </td>
                     <td class="ref mono">{q.billRef ?? <span class="none">none</span>}</td>
+                    {priced && <td class="num amount">{q.amount !== null ? pkr(q.amount) : <span class="none">—</span>}</td>}
                     <td>
                       <StatusPill
                         tone={byId[q.outcome].tone}
@@ -234,10 +248,12 @@ const searchText = (q: LogEntry) =>
                       />
                     </td>
                     <td class="num">{q.replyMs !== null ? duration(q.replyMs) : <span class="none">—</span>}</td>
-                    <td class="caller">
-                      <span class:list={{ mono: !q.local }}>{q.local ? 'Same server' : (q.ip ?? '—')}</span>
-                      {q.client && <span class="sub mono">{q.client}</span>}
-                    </td>
+                    {hasCaller && (
+                      <td class="caller">
+                        <span class:list={{ mono: !q.local }}>{q.local ? 'Same server' : (q.ip ?? '—')}</span>
+                        {q.client && <span class="sub mono">{q.client}</span>}
+                      </td>
+                    )}
                     <td class="go">
                       <a href={`#${anchor}-${q.id}`} data-open aria-label={`Details of ${one} ${q.id}`}>
                         Details
@@ -247,7 +263,7 @@ const searchText = (q: LogEntry) =>
                   </tr>
                 ))}
                 <tr class="empty" data-empty hidden>
-                  <td colspan="6">
+                  <td colspan={cols}>
                     No {many} match.
                     <button class="linkish" type="button" data-clear>
                       Show all
@@ -594,6 +610,11 @@ const searchText = (q: LogEntry) =>
 
   .none {
     color: var(--faint);
+  }
+
+  .amount {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
 
   .caller {

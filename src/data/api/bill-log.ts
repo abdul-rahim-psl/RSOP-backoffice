@@ -93,21 +93,30 @@ export const logs: Record<LogId, LogKind> = {
   },
 };
 
-/** One element of the API's answer, as it sends it. */
+/**
+ * One element of the API's answer, as it sends it. The inquiry log sends the raw call (headers, IP, `uid`); since
+ * 2026-10-22 the payment log sends the payment's own fields instead (`billReference`, `billId`, `totalAmount`, the
+ * participants). Either may come, so every field but the ID and request time is optional.
+ */
 export interface RawEntry {
   id: number;
-  ipAddress: string | null;
   requestDate: string;
-  requestHeaders: string | null;
-  responseDate: string | null;
-  responseHeaders: string | null;
-  rrn: string | null;
-  stan: string | null;
-  correlationId: string | null;
-  uid: string | null;
-  responseCode: string | null;
-  responseDesc: string | null;
-  originalMessageId: string | null;
+  responseDate?: string | null;
+  responseCode?: string | null;
+  responseDesc?: string | null;
+  ipAddress?: string | null;
+  requestHeaders?: string | null;
+  responseHeaders?: string | null;
+  rrn?: string | null;
+  stan?: string | null;
+  correlationId?: string | null;
+  uid?: string | null;
+  originalMessageId?: string | null;
+  billReference?: string | null;
+  billId?: string | null;
+  totalAmount?: string | number | null;
+  sender?: string | null;
+  receiver?: string | null;
 }
 
 export type Header = [name: string, value: string];
@@ -118,6 +127,9 @@ export interface LogEntry {
   repliedAt: string | null;
   replyMs: number | null;
   billRef: string | null;
+  billId: string | null;
+  /** Rupees, for a payment that carries its total. */
+  amount: number | null;
   outcome: Outcome;
   code: string | null;
   desc: string | null;
@@ -174,6 +186,10 @@ export const isLoopback = (ip: string | null) =>
   !!ip && (ip === '::1' || ip === '0:0:0:0:0:0:0:1' || ip.startsWith('127.') || ip.startsWith('::ffff:127.'));
 
 const text = (v: unknown) => (typeof v === 'string' ? v : v == null ? null : String(v));
+const rupees = (v: unknown) => {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() ? Number(v) : NaN;
+  return Number.isFinite(n) ? n : null;
+};
 
 export function toEntry(r: RawEntry): LogEntry {
   const request = parseHeaders(text(r.requestHeaders));
@@ -186,7 +202,9 @@ export function toEntry(r: RawEntry): LogEntry {
     at: r.requestDate,
     repliedAt,
     replyMs: repliedAt ? Date.parse(repliedAt) - Date.parse(r.requestDate) : null,
-    billRef: text(r.uid) || null,
+    billRef: text(r.billReference) || text(r.uid) || null,
+    billId: text(r.billId) || null,
+    amount: rupees(r.totalAmount),
     outcome: code === '0' ? 'returned' : code !== null || repliedAt ? 'error' : 'silent',
     code,
     desc: text(r.responseDesc),
@@ -194,9 +212,9 @@ export function toEntry(r: RawEntry): LogEntry {
     local: isLoopback(text(r.ipAddress)),
     client: ua ? ua.replace('/', ' ') : null,
     host: header(request, 'host'),
-    sender: header(request, 'sender-participant-code'),
+    sender: text(r.sender) || header(request, 'sender-participant-code'),
     senderUser: header(request, 'sender-user-code'),
-    receiver: header(request, 'receiver-participant-code'),
+    receiver: text(r.receiver) || header(request, 'receiver-participant-code'),
     requestId: header(request, 'x-request-id'),
     correlationId: text(r.correlationId),
     rrn: text(r.rrn),
@@ -252,6 +270,9 @@ export async function fetchLog(kind: LogKind, base?: string, timeoutMs = LOG_TIM
 
 export interface LogSummary {
   total: number;
+  /** Rupees across SUCCESS entries that carry an amount, and how many did. */
+  collected: number;
+  priced: number;
   counts: Record<Outcome, number>;
   medianMs: number | null;
   slowestMs: number | null;
@@ -267,8 +288,14 @@ export function summarize(list: LogEntry[]): LogSummary {
   const counts: Record<Outcome, number> = { returned: 0, error: 0, silent: 0 };
   const errors = new Map<string, number>();
   const requestIds = new Map<string, number>();
+  let collected = 0;
+  let priced = 0;
   for (const q of list) {
     counts[q.outcome]++;
+    if (q.outcome === 'returned' && q.amount !== null) {
+      collected += q.amount;
+      priced++;
+    }
     if (q.outcome === 'error') {
       const desc = q.desc || `code ${q.code ?? 'missing'}`;
       errors.set(desc, (errors.get(desc) ?? 0) + 1);
@@ -279,6 +306,8 @@ export function summarize(list: LogEntry[]): LogSummary {
   const mid = times.length >> 1;
   return {
     total: list.length,
+    collected,
+    priced,
     counts,
     medianMs: times.length ? (times.length % 2 ? times[mid] : Math.round((times[mid - 1] + times[mid]) / 2)) : null,
     slowestMs: times.at(-1) ?? null,

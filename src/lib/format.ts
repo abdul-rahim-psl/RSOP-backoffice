@@ -8,10 +8,10 @@ export const pkr = (rupees: number) => `PKR ${fmt2.format(rupees)}`;
 
 export const int = (n: number) => fmt0.format(n);
 
-/** Big amounts for stat tiles: "PKR 3.94M". */
+/** Big amounts for stat tiles: "PKR 3.94M", "PKR 500K", "PKR 12.5K". */
 export function compactPkr(rupees: number): string {
-  if (rupees >= 1_000_000) return `PKR ${(rupees / 1_000_000).toFixed(2)}M`;
-  if (rupees >= 1_000) return `PKR ${(rupees / 1_000).toFixed(1)}K`;
+  if (rupees >= 1_000_000) return `PKR ${+(rupees / 1_000_000).toFixed(2)}M`;
+  if (rupees >= 1_000) return `PKR ${+(rupees / 1_000).toFixed(1)}K`;
   return pkr(rupees);
 }
 

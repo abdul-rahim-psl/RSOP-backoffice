@@ -58,6 +58,23 @@ test('each entry gets a plain result, a reply time and its caller', () => {
   assert.equal(remote.ip, '192.0.2.10');
 });
 
+test("the payment log's own fields are read, and its total counts once paid", () => {
+  const [paid, open] = readLog(
+    [
+      { id: 9, requestDate: '2026-10-22T06:17:01.528+00:00', responseDate: '2026-10-22T06:17:02.141+00:00', sender: 'FAYSPKKA', receiver: 'DUIBPKKA', billId: 'b1', billReference: '11111AAAAA', totalAmount: '100000', responseCode: '0', responseDesc: 'SUCCESS' },
+      { id: 8, requestDate: '2026-10-22T06:00:00.000+00:00', billReference: '22222BBBBB', totalAmount: '250.50', responseCode: null },
+    ],
+    logs.payment,
+  );
+  assert.deepEqual([paid.billRef, paid.billId, paid.amount, paid.sender, paid.receiver], ['11111AAAAA', 'b1', 100000, 'FAYSPKKA', 'DUIBPKKA']);
+  assert.equal(paid.replyMs, 613);
+  assert.deepEqual([paid.request, paid.ip, paid.client], [[], null, null]);
+  assert.equal(open.amount, 250.5);
+  const s = summarize([paid, open]);
+  assert.deepEqual([s.collected, s.priced], [100000, 1], 'only SUCCESS counts as collected');
+  assert.equal(summarize(readLog(sample)).priced, 0, 'the inquiry log carries no amounts');
+});
+
 test('a reply with a code but no time, or a time but no code, is still an error reply, never a success', () => {
   const [a, b] = readLog([
     entry({ id: 1, responseDate: null, responseCode: '500', responseDesc: 'Down' }),
@@ -120,7 +137,7 @@ test('the committed snapshots read cleanly, so the fallback always has something
     const s = snapshotLog(kind);
     assert.ok(s.url.endsWith(kind.path), kind.id);
     assert.ok(s.entries.length > 0, kind.id);
-    assert.ok(s.entries.every((q) => q.request.length > 0 && !Number.isNaN(Date.parse(q.at))), kind.id);
+    assert.ok(s.entries.every((q) => !Number.isNaN(Date.parse(q.at))), kind.id);
   }
 });
 

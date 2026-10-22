@@ -2,7 +2,7 @@
 import Icon from '../Icon.astro';
 import StatusPill from '../StatusPill.astro';
 import type { Header, LogEntry, LogKind } from '../../data/api/bill-log';
-import { duration, pktTime, pktWhen } from '../../lib/format';
+import { duration, pkr, pktTime, pktWhen } from '../../lib/format';
 
 interface Props {
   q: LogEntry;
@@ -26,7 +26,11 @@ const story =
       : `No reply was recorded. It was logged at ${pktTime(q.at)}, and nothing had come back by ${pktWhen(readAt, now)}, when the log was read.`;
 
 const others = shared - 1;
-const ids: { label: string; value: string | null; note?: string }[] = [
+// The payment log records the payment, not the raw call: with no headers, rows that could only say
+// "Not recorded" fold into the one line under the IDs.
+const bare = q.request.length === 0 && q.response.length === 0;
+const allIds: { label: string; value: string | null; note?: string }[] = [
+  ...(q.billId ? [{ label: 'Bill ID', value: q.billId }] : []),
   { label: 'Correlation ID', value: q.correlationId },
   {
     label: 'Request ID',
@@ -38,10 +42,17 @@ const ids: { label: string; value: string | null; note?: string }[] = [
   ...(q.stan ? [{ label: 'STAN', value: q.stan }] : []),
   ...(q.originalMessageId ? [{ label: 'Original message ID', value: q.originalMessageId }] : []),
 ];
-const unset = [!q.rrn && 'RRN', !q.stan && 'STAN', !q.originalMessageId && 'original message ID'].filter((x): x is string => !!x);
+const ids = bare ? allIds.filter((id) => id.value) : allIds;
+const unset = [
+  ...(bare ? allIds.filter((id) => !id.value).map((id) => id.label[0].toLowerCase() + id.label.slice(1)) : []),
+  !q.rrn && 'RRN',
+  !q.stan && 'STAN',
+  !q.originalMessageId && 'original message ID',
+  bare && 'headers',
+].filter((x): x is string => !!x);
 const unsetText = unset.length > 1 ? `${unset.slice(0, -1).join(', ')} and ${unset.at(-1)}` : unset[0];
 
-const who: { label: string; value: string | null; mono?: boolean; sub?: string }[] = [
+const allWho: { label: string; value: string | null; mono?: boolean; sub?: string }[] = [
   { label: 'Sender participant', value: q.sender, mono: true },
   { label: 'Sender user', value: q.senderUser, mono: true },
   { label: 'Receiver participant', value: q.receiver, mono: true },
@@ -49,11 +60,14 @@ const who: { label: string; value: string | null; mono?: boolean; sub?: string }
   { label: 'Client', value: q.client, mono: true },
   { label: 'Addressed to', value: q.host, mono: true },
 ];
+const who = bare ? allWho.filter((w) => w.value) : allWho;
 
-const headerSets: { title: string; list: Header[] }[] = [
-  { title: 'Request headers', list: q.request },
-  { title: 'Response headers', list: q.response },
-];
+const headerSets: { title: string; list: Header[] }[] = bare
+  ? []
+  : [
+      { title: 'Request headers', list: q.request },
+      { title: 'Response headers', list: q.response },
+    ];
 ---
 
 <article class="entry" id={`${kind.anchor}-${q.id}`} aria-labelledby={`${kind.anchor}-${q.id}-h`}>
@@ -62,6 +76,7 @@ const headerSets: { title: string; list: Header[] }[] = [
     <h3 id={`${kind.anchor}-${q.id}-h`}>
       {q.billRef ? <>Bill <span class="mono">{q.billRef}</span></> : 'No bill reference'}
     </h3>
+    {q.amount !== null && <p class="amount">{pkr(q.amount)}</p>}
     <StatusPill tone={o.tone} code={q.outcome === 'error' ? (q.code ?? undefined) : undefined} word={word} />
     <p class="story">{story}</p>
   </header>
@@ -160,6 +175,12 @@ const headerSets: { title: string; list: Header[] }[] = [
   .entry {
     display: grid;
     gap: 20px;
+  }
+
+  .amount {
+    font-size: 1.05rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
   }
 
   .entry-head {
