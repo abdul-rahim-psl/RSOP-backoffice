@@ -1,0 +1,357 @@
+---
+import Icon from '../Icon.astro';
+import StatusPill from '../StatusPill.astro';
+import { outcomes, type Header, type Inquiry } from '../../data/api/inquiry-log';
+import { duration, pktTime, pktWhen } from '../../lib/format';
+
+interface Props {
+  q: Inquiry;
+  now: Date;
+  /** When the log was read; a snapshot's is older than the page. */
+  readAt: string;
+  /** How many inquiries in the log carry this one's request ID. */
+  shared: number;
+}
+
+const { q, now, readAt, shared } = Astro.props;
+const o = outcomes.find((x) => x.id === q.outcome)!;
+const word = q.outcome === 'error' ? q.desc || o.label : o.label;
+
+const story =
+  q.outcome === 'returned'
+    ? `SUCCESS came back in ${duration(q.replyMs ?? 0)}, so the bill was found.`
+    : q.outcome === 'error'
+      ? `A reply came back${q.replyMs !== null ? ` in ${duration(q.replyMs)}` : ''}: ${q.desc || 'no description'}${q.code ? ` (code ${q.code})` : ''}.`
+      : `No reply was recorded. It was logged at ${pktTime(q.at)}, and nothing had come back by ${pktWhen(readAt, now)}, when the log was read.`;
+
+const others = shared - 1;
+const ids: { label: string; value: string | null; note?: string }[] = [
+  { label: 'Correlation ID', value: q.correlationId },
+  {
+    label: 'Request ID',
+    value: q.requestId,
+    note: others > 0 ? `Also on ${others} other inquir${others === 1 ? 'y' : 'ies'} in this log, so it can't tell them apart.` : undefined,
+  },
+  { label: 'Log ID', value: String(q.id) },
+  ...(q.rrn ? [{ label: 'RRN', value: q.rrn }] : []),
+  ...(q.stan ? [{ label: 'STAN', value: q.stan }] : []),
+  ...(q.originalMessageId ? [{ label: 'Original message ID', value: q.originalMessageId }] : []),
+];
+const unset = [!q.rrn && 'RRN', !q.stan && 'STAN', !q.originalMessageId && 'original message ID'].filter((x): x is string => !!x);
+const unsetText = unset.length > 1 ? `${unset.slice(0, -1).join(', ')} and ${unset.at(-1)}` : unset[0];
+
+const who: { label: string; value: string | null; mono?: boolean; sub?: string }[] = [
+  { label: 'Sender participant', value: q.sender, mono: true },
+  { label: 'Sender user', value: q.senderUser, mono: true },
+  { label: 'Receiver participant', value: q.receiver, mono: true },
+  { label: 'Called from', value: q.local ? "The log's own server" : q.ip, mono: !q.local, sub: q.local ? `loopback, ${q.ip}` : undefined },
+  { label: 'Client', value: q.client, mono: true },
+  { label: 'Addressed to', value: q.host, mono: true },
+];
+
+const headerSets: { title: string; list: Header[] }[] = [
+  { title: 'Request headers', list: q.request },
+  { title: 'Response headers', list: q.response },
+];
+---
+
+<article class="inq" id={`inq-${q.id}`} aria-labelledby={`inq-${q.id}-h`}>
+  <header class="inq-head">
+    <p class="eyebrow">Inquiry {q.id}</p>
+    <h3 id={`inq-${q.id}-h`}>
+      {q.billRef ? <>Bill <span class="mono">{q.billRef}</span></> : 'No bill reference'}
+    </h3>
+    <StatusPill tone={o.tone} code={q.outcome === 'error' ? (q.code ?? undefined) : undefined} word={word} />
+    <p class="story">{story}</p>
+  </header>
+
+  <section class="block">
+    <h4 class="seclabel">When</h4>
+    <dl class="facts">
+      <div>
+        <dt>Asked</dt>
+        <dd><time datetime={q.at}>{pktWhen(q.at, now)}</time></dd>
+      </div>
+      <div>
+        <dt>Answered</dt>
+        <dd>{q.repliedAt ? <time datetime={q.repliedAt}>{pktWhen(q.repliedAt, now)}</time> : <span class="none">No reply recorded</span>}</dd>
+      </div>
+      <div>
+        <dt>Reply time</dt>
+        <dd>{q.replyMs !== null ? duration(q.replyMs) : <span class="none">—</span>}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="block">
+    <h4 class="seclabel">Who asked</h4>
+    <dl class="facts">
+      {
+        who.map((w) => (
+          <div>
+            <dt>{w.label}</dt>
+            <dd>
+              {w.value ? <span class:list={{ mono: w.mono }}>{w.value}</span> : <span class="none">Not recorded</span>}
+              {w.sub && <span class="sub mono">{w.sub}</span>}
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  <section class="block">
+    <h4 class="seclabel">IDs for tracing</h4>
+    <dl class="facts">
+      {
+        ids.map((id) => (
+          <div>
+            <dt>{id.label}</dt>
+            <dd>
+              {id.value ? (
+                <span class="id">
+                  <span class="mono">{id.value}</span>
+                  <button class="copy" type="button" data-copy={id.value} data-copy-label={id.label} aria-label={`Copy ${id.label}`}>
+                    <Icon name="copy" size={14} />
+                  </button>
+                </span>
+              ) : (
+                <span class="none">Not recorded</span>
+              )}
+              {id.note && <span class="warn">{id.note}</span>}
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+    {unsetText && <p class="unset">Not recorded for this inquiry: {unsetText}.</p>}
+  </section>
+
+  {
+    headerSets.map((h) => (
+      <details class="hdrs">
+        <summary>
+          <Icon name="chevron" size={15} />
+          {h.title}
+          <span class="count">{h.list.length}</span>
+        </summary>
+        {h.list.length ? (
+          <table class="hdr-table">
+            <caption class="sr-only">{h.title}</caption>
+            <tbody>
+              {h.list.map(([name, value]) => (
+                <tr>
+                  <th scope="row" class="mono">{name}</th>
+                  <td class="mono">{value || <span class="none">empty</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p class="unset">None recorded.</p>
+        )}
+      </details>
+    ))
+  }
+</article>
+
+<style>
+  .inq {
+    display: grid;
+    gap: 20px;
+  }
+
+  .inq-head {
+    display: grid;
+    justify-items: start;
+    gap: 8px;
+  }
+
+  h3 {
+    font-family: var(--font-serif);
+    font-size: 1.7rem;
+    font-weight: 500;
+    line-height: 1.1;
+  }
+
+  h3 .mono {
+    font-size: 0.8em;
+  }
+
+  .story {
+    color: var(--ink-2);
+    font-size: 0.9rem;
+  }
+
+  .block {
+    display: grid;
+    gap: 8px;
+  }
+
+  .facts {
+    display: grid;
+    border: 1px solid var(--stroke);
+    border-radius: var(--radius-sm);
+    background: var(--raised);
+  }
+
+  .facts > div {
+    display: grid;
+    grid-template-columns: minmax(120px, 34%) minmax(0, 1fr);
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--stroke);
+  }
+
+  .facts > div:last-child {
+    border-bottom: 0;
+  }
+
+  dt {
+    color: var(--mut);
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  dd {
+    min-width: 0;
+    font-size: 0.86rem;
+    overflow-wrap: anywhere;
+  }
+
+  dd .mono {
+    font-size: 0.8rem;
+  }
+
+  .sub {
+    display: block;
+    color: var(--mut);
+    font-size: 0.72rem;
+  }
+
+  .none {
+    color: var(--faint);
+  }
+
+  .id {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .copy {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--stroke);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--mut);
+    cursor: pointer;
+  }
+
+  .copy:hover {
+    color: var(--ink);
+    background: var(--hover);
+  }
+
+  .copy[data-done] {
+    color: var(--ok-ink);
+    border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+  }
+
+  /* Copying needs the script; without it the ID is still there to select. */
+  :global(html:not(.js)) .copy {
+    display: none;
+  }
+
+  .warn {
+    display: block;
+    margin-top: 4px;
+    color: var(--wait-ink);
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+
+  .unset {
+    color: var(--faint);
+    font-size: 0.78rem;
+  }
+
+  .hdrs {
+    border: 1px solid var(--stroke);
+    border-radius: var(--radius-sm);
+  }
+
+  .hdrs summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    font-size: 0.84rem;
+    font-weight: 800;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .hdrs summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .hdrs summary :global(.icon) {
+    color: var(--mut);
+    transform: rotate(-90deg);
+    transition: transform 0.15s;
+  }
+
+  .hdrs[open] summary :global(.icon) {
+    transform: none;
+  }
+
+  .count {
+    color: var(--faint);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+  }
+
+  .hdrs > .unset {
+    padding: 0 12px 10px;
+  }
+
+  .hdr-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1px solid var(--stroke);
+    font-size: 0.74rem;
+  }
+
+  .hdr-table th,
+  .hdr-table td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--stroke);
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+
+  .hdr-table tr:last-child th,
+  .hdr-table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .hdr-table th {
+    width: 40%;
+    color: var(--mut);
+    font-weight: 600;
+  }
+
+  @media (max-width: 480px) {
+    .facts > div {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2px;
+    }
+  }
+</style>

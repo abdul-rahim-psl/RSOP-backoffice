@@ -10,7 +10,8 @@
     "check": "astro check && npm run check:data",
     "check:data": "node --test tests/*.test.ts",
     "api:pull": "node tools/api-pull.ts",
-    "api:check": "node tools/api-pull.ts --check"
+    "api:check": "node tools/api-pull.ts --check",
+    "log:pull": "node tools/log-pull.ts"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.9",

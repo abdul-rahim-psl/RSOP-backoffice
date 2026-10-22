@@ -51,3 +51,26 @@ const pktClock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Karachi', ho
 
 /** An ISO time as a Pakistan-time clock: "23:41:07". */
 export const pktTime = (iso: string) => pktClock.format(new Date(iso));
+
+const pktDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi', year: 'numeric', month: '2-digit', day: '2-digit' });
+const pktDayMonth = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Karachi', day: 'numeric', month: 'short' });
+
+/** "Today, 08:08:04", "Yesterday, 23:41:07" or "20 Oct, 11:02:00", by the Pakistan calendar. */
+export function pktWhen(iso: string, now = new Date()): string {
+  const days = Math.round((Date.parse(pktDate.format(now)) - Date.parse(pktDate.format(new Date(iso)))) / 86_400_000);
+  const day = days === 0 ? 'Today' : days === 1 ? 'Yesterday' : pktDayMonth.format(new Date(iso));
+  return `${day}, ${pktTime(iso)}`;
+}
+
+/** "just now", "12 min ago", "3 h ago", "2 days ago". */
+export function ago(iso: string, now = new Date()): string {
+  const s = Math.max(0, (now.getTime() - Date.parse(iso)) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+  if (s < 86_400) return `${Math.floor(s / 3600)} h ago`;
+  const d = Math.floor(s / 86_400);
+  return `${d} day${d === 1 ? '' : 's'} ago`;
+}
+
+/** A reply time: "391 ms", "1.24 s". */
+export const duration = (ms: number) => (ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(2)} s`);

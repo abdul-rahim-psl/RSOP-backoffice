@@ -8,9 +8,9 @@ interface Props {
   bodyClass?: string;
 }
 
-const site = 'RSOP back office';
+const site = 'Backoffice';
 const { title, description = 'First-draft back office for RSOP: dashboard, flow designer and users, on mock data.', bodyClass } = Astro.props;
-const pageTitle = title ? `${title} · ${site}` : site;
+const pageTitle = title ? `${site} · ${title}` : site;
 ---
 
 <!doctype html>
@@ -27,6 +27,7 @@ const pageTitle = title ? `${title} · ${site}` : site;
       } catch {}
     </script>
     <title>{pageTitle}</title>
+    <meta name="application-name" content={site} />
     <meta name="description" content={description} />
     <meta name="color-scheme" content="dark light" />
     <meta name="robots" content="noindex" />

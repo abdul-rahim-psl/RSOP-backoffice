@@ -6,6 +6,7 @@
 - [Run locally](#run-locally)
 - [Checks](#checks)
 - [The flow API](#the-flow-api)
+- [The inquiry log API](#the-inquiry-log-api)
 - [Where things live](#where-things-live)
 - [How the Designer works](#how-the-designer-works)
 - [Design](#design)
@@ -20,6 +21,7 @@ A first-draft UI for the RSOP back office, built from KJ's HLD sketch ([pics/](p
 |---|---|
 | `/` | Sign in: any username and password go to the dashboard |
 | `/dashboard/` | Bill-pay stats (collected, payments per hour, funnel, bill types) and billing (the bill ledger, filterable) |
+| `/inquiries/` | Bill inquiries, **live**: every inquiry the log API recorded, with result, reply time and caller; a drawer per inquiry with IDs, participants and headers. Shown to the Admin role |
 | `/designer/inquiry/` | RSOP Designer, Inquiry flow: the API's chain, which is KJ's pipeline plus the gateway; YAML params; one sample transaction, "FBR", on a timeline |
 | `/designer/payment/` | RSOP Designer, Payment flow: the API's two chains (pacs.008 → AUTH, then ACSP → bill marking), plus the doc's inquiry store and Rejected steps |
 | `/users/` | Users, search and role filter, roles and permissions, invite and edit dialog (sends nothing) |
@@ -78,6 +80,15 @@ npm run api:check   # compare the live API with the snapshot; exits 1 if they di
 - **The snapshot keeps the raw responses**, so a parser change never needs a new pull.
 - **A new service.** If the API adds one, the page still renders it as a plain step. `npm run check` then names the service, the missing description and any sample transaction it breaks.
 - **The plan behind this** is in [docs/api-integration/plan.md](docs/api-integration/plan.md).
+
+## The inquiry log API
+
+`GET http://10.0.150.35:7774/api/v1/billInquirylist` returns every logged bill inquiry, newest first. The server reads it on each load of `/inquiries/` (5 s timeout; the API also fails CORS, like the flow API).
+
+- **Results.** Code `0` → "Bill returned"; any other code → "Error reply" with the API's description; no reply recorded → "No reply".
+- **Fallback.** If the API can't be read, the page shows `src/data/api/inquiry-log.snapshot.json` under an amber banner. `npm run log:pull` refreshes it.
+- **Base URL.** Set `RSOP_INQUIRY_LOG_BASE` to point elsewhere.
+- **Code.** `src/data/api/inquiry-log.ts` (fetch, header parsing, summary), `src/pages/inquiries.astro`, `src/components/inquiries/InquiryDetail.astro`, `src/scripts/inquiries.ts`.
 
 ## Where things live
 

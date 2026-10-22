@@ -2,11 +2,17 @@
 import Brand from './Brand.astro';
 import Icon, { type IconName } from './Icon.astro';
 import ThemeToggle from './ThemeToggle.astro';
-import { initials, me } from '../data/users';
+import { can, INQUIRY_LOG, initials, me } from '../data/users';
 
+interface Props {
+  live?: boolean;
+}
+
+const { live = false } = Astro.props;
 const path = Astro.url.pathname;
 const links: { href: string; match: string; label: string; icon: IconName }[] = [
   { href: '/dashboard/', match: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
+  ...(can(me.role, INQUIRY_LOG) ? [{ href: '/inquiries/', match: '/inquiries', label: 'Inquiries', icon: 'inbound' as const }] : []),
   { href: '/designer/inquiry/', match: '/designer', label: 'Designer', icon: 'designer' },
   { href: '/users/', match: '/users', label: 'Users', icon: 'users' },
 ];
@@ -28,10 +34,19 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
   </nav>
 
   <div class="tools">
-    <span class="mock" title="Nothing on these screens is connected to a live RSOP">
-      <Icon name="flag" size={14} />
-      <span>Mock data</span>
-    </span>
+    {
+      live ? (
+        <span class="mock" data-live title="This screen reads live data on every load; the other screens are mock">
+          <Icon name="check" size={14} />
+          <span>Live data</span>
+        </span>
+      ) : (
+        <span class="mock" title="Nothing on these screens is connected to a live RSOP">
+          <Icon name="flag" size={14} />
+          <span>Mock data</span>
+        </span>
+      )
+    }
     <ThemeToggle />
     <button class="me" type="button" popovertarget="me-menu" aria-label={`${me.name}, account menu`}>
       <span aria-hidden="true">{initials(me.name)}</span>
@@ -59,7 +74,13 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
       </a>
     ))
   }
-  <p class="mock-line"><Icon name="flag" size={14} />Mock data: nothing here is live</p>
+  {
+    live ? (
+      <p class="mock-line" data-live><Icon name="check" size={14} />Live data on this screen; the others are mock</p>
+    ) : (
+      <p class="mock-line"><Icon name="flag" size={14} />Mock data: nothing here is live</p>
+    )
+  }
 </div>
 
 <style>
@@ -132,6 +153,15 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
     font-weight: 800;
     letter-spacing: 0.02em;
     white-space: nowrap;
+  }
+
+  .mock[data-live] {
+    border: 1px solid color-mix(in srgb, var(--ok) 55%, transparent);
+    color: var(--ok-ink);
+  }
+
+  .mock-line[data-live] {
+    color: var(--ok-ink);
   }
 
   .me {
