@@ -1,0 +1,9 @@
+---
+import LogScreen from '../components/log/LogScreen.astro';
+
+// Rendered on each request, so the log is as fresh as the page.
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store');
+---
+
+<LogScreen log="payment" />

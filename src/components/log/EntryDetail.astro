@@ -1,25 +1,26 @@
 ---
 import Icon from '../Icon.astro';
 import StatusPill from '../StatusPill.astro';
-import { outcomes, type Header, type Inquiry } from '../../data/api/inquiry-log';
+import type { Header, LogEntry, LogKind } from '../../data/api/bill-log';
 import { duration, pktTime, pktWhen } from '../../lib/format';
 
 interface Props {
-  q: Inquiry;
+  q: LogEntry;
+  kind: LogKind;
   now: Date;
   /** When the log was read; a snapshot's is older than the page. */
   readAt: string;
-  /** How many inquiries in the log carry this one's request ID. */
+  /** How many entries in the log carry this one's request ID. */
   shared: number;
 }
 
-const { q, now, readAt, shared } = Astro.props;
-const o = outcomes.find((x) => x.id === q.outcome)!;
+const { q, kind, now, readAt, shared } = Astro.props;
+const o = kind.outcomes.find((x) => x.id === q.outcome)!;
 const word = q.outcome === 'error' ? q.desc || o.label : o.label;
 
 const story =
   q.outcome === 'returned'
-    ? `SUCCESS came back in ${duration(q.replyMs ?? 0)}, so the bill was found.`
+    ? `SUCCESS came back in ${duration(q.replyMs ?? 0)}, ${kind.okStory}.`
     : q.outcome === 'error'
       ? `A reply came back${q.replyMs !== null ? ` in ${duration(q.replyMs)}` : ''}: ${q.desc || 'no description'}${q.code ? ` (code ${q.code})` : ''}.`
       : `No reply was recorded. It was logged at ${pktTime(q.at)}, and nothing had come back by ${pktWhen(readAt, now)}, when the log was read.`;
@@ -30,7 +31,7 @@ const ids: { label: string; value: string | null; note?: string }[] = [
   {
     label: 'Request ID',
     value: q.requestId,
-    note: others > 0 ? `Also on ${others} other inquir${others === 1 ? 'y' : 'ies'} in this log, so it can't tell them apart.` : undefined,
+    note: others > 0 ? `Also on ${others} other ${others === 1 ? kind.one : kind.many} in this log, so it can't tell them apart.` : undefined,
   },
   { label: 'Log ID', value: String(q.id) },
   ...(q.rrn ? [{ label: 'RRN', value: q.rrn }] : []),
@@ -55,10 +56,10 @@ const headerSets: { title: string; list: Header[] }[] = [
 ];
 ---
 
-<article class="inq" id={`inq-${q.id}`} aria-labelledby={`inq-${q.id}-h`}>
-  <header class="inq-head">
-    <p class="eyebrow">Inquiry {q.id}</p>
-    <h3 id={`inq-${q.id}-h`}>
+<article class="entry" id={`${kind.anchor}-${q.id}`} aria-labelledby={`${kind.anchor}-${q.id}-h`}>
+  <header class="entry-head">
+    <p class="eyebrow">{kind.One} {q.id}</p>
+    <h3 id={`${kind.anchor}-${q.id}-h`}>
       {q.billRef ? <>Bill <span class="mono">{q.billRef}</span></> : 'No bill reference'}
     </h3>
     <StatusPill tone={o.tone} code={q.outcome === 'error' ? (q.code ?? undefined) : undefined} word={word} />
@@ -69,7 +70,7 @@ const headerSets: { title: string; list: Header[] }[] = [
     <h4 class="seclabel">When</h4>
     <dl class="facts">
       <div>
-        <dt>Asked</dt>
+        <dt>{kind.asked}</dt>
         <dd><time datetime={q.at}>{pktWhen(q.at, now)}</time></dd>
       </div>
       <div>
@@ -84,7 +85,7 @@ const headerSets: { title: string; list: Header[] }[] = [
   </section>
 
   <section class="block">
-    <h4 class="seclabel">Who asked</h4>
+    <h4 class="seclabel">{kind.whoAsked}</h4>
     <dl class="facts">
       {
         who.map((w) => (
@@ -124,7 +125,7 @@ const headerSets: { title: string; list: Header[] }[] = [
         ))
       }
     </dl>
-    {unsetText && <p class="unset">Not recorded for this inquiry: {unsetText}.</p>}
+    {unsetText && <p class="unset">Not recorded for this {kind.one}: {unsetText}.</p>}
   </section>
 
   {
@@ -156,12 +157,12 @@ const headerSets: { title: string; list: Header[] }[] = [
 </article>
 
 <style>
-  .inq {
+  .entry {
     display: grid;
     gap: 20px;
   }
 
-  .inq-head {
+  .entry-head {
     display: grid;
     justify-items: start;
     gap: 8px;

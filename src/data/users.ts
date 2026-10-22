@@ -32,8 +32,9 @@ export const roles: { role: Role; summary: string }[] = [
   { role: 'Viewer', summary: 'Reads the dashboard and the flows' },
 ];
 
-/** The one live screen's permission; the nav shows the screen only to roles that have it. */
+/** The live screens' permissions; the nav shows each screen only to roles that have it. */
 export const INQUIRY_LOG = 'View the bill inquiry log';
+export const PAYMENT_LOG = 'View the bill payment log';
 
 export const permissions: { label: string; roles: Role[] }[] = [
   { label: 'View dashboard and billing', roles: ['Admin', 'Operator', 'Designer', 'Viewer'] },
@@ -43,6 +44,7 @@ export const permissions: { label: string; roles: Role[] }[] = [
   { label: 'Retry bill marking', roles: ['Admin', 'Operator'] },
   { label: 'Manage users and roles', roles: ['Admin'] },
   { label: INQUIRY_LOG, roles: ['Admin'] },
+  { label: PAYMENT_LOG, roles: ['Admin'] },
 ];
 
 export const can = (role: Role, permission: string) => permissions.some((p) => p.label === permission && p.roles.includes(role));

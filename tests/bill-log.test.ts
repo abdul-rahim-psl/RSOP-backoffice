@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { fetchInquiryLog, parseHeaders, readLog, snapshotLog, summarize, type RawInquiry } from '../src/data/api/inquiry-log.ts';
+import { fetchLog, logs, parseHeaders, readLog, snapshotLog, summarize, type RawEntry } from '../src/data/api/bill-log.ts';
 import { ago, pktWhen } from '../src/lib/format.ts';
 
 // Entries in the API's shape, one per case the page distinguishes.
-const entry = (over: Partial<RawInquiry>): RawInquiry => ({
+const entry = (over: Partial<RawEntry>): RawEntry => ({
   id: 1,
   ipAddress: '0:0:0:0:0:0:0:1',
   requestDate: '2026-10-22T03:00:00.000+00:00',
@@ -79,38 +79,49 @@ test('the summary counts every result, the median reply and shared request IDs',
   assert.equal(s.oldest, '2026-10-22T02:00:00.000+00:00');
 });
 
-test('an answer that is not a list of inquiries is refused, naming the problem', () => {
-  assert.throws(() => readLog({ items: [] }), /wasn't a list/);
+test('an answer that is not a list of entries is refused, naming the problem', () => {
+  assert.throws(() => readLog({ items: [] }), /wasn't a list of inquiries/);
+  assert.throws(() => readLog({ items: [] }, logs.payment), /wasn't a list of payments/);
   assert.throws(() => readLog([entry({}), { id: 'x' }]), /Entry 2/);
 });
 
-test('the server reads the log, and says why when it cannot', async () => {
+test('the server reads each log from its own path, and says why when it cannot', async () => {
   const server = createServer((req, res) => {
     if (req.url === '/api/v1/billInquirylist') return res.end(JSON.stringify(sample));
+    if (req.url === '/api/v1/billPaymentlist') return res.end(JSON.stringify(sample.slice(0, 2)));
     res.statusCode = 503;
     res.end();
   }).listen(0, '127.0.0.1');
   await new Promise((r) => server.once('listening', r));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   try {
-    const ok = await fetchInquiryLog(base);
+    const ok = await fetchLog(logs.inquiry, base);
     assert.ok(ok.live);
-    assert.equal(ok.inquiries.length, 4);
-    const bad = await fetchInquiryLog(`${base}/elsewhere`);
+    assert.equal(ok.entries.length, 4);
+    const paid = await fetchLog(logs.payment, base);
+    assert.ok(paid.live);
+    assert.equal(paid.url, `${base}/api/v1/billPaymentlist`);
+    assert.equal(paid.entries.length, 2);
+    const bad = await fetchLog(logs.inquiry, `${base}/elsewhere`);
     assert.ok(!bad.live && /HTTP 503/.test(bad.error ?? ''));
   } finally {
     server.close();
   }
-  const down = await fetchInquiryLog('http://127.0.0.1:59999', 1500);
+  const down = await fetchLog(logs.inquiry, 'http://127.0.0.1:59999', 1500);
   assert.ok(!down.live && /Couldn't connect|No answer/.test(down.error ?? ''));
   assert.equal(down.tried, 'http://127.0.0.1:59999/api/v1/billInquirylist');
-  assert.deepEqual(down.inquiries, snapshotLog().inquiries, 'falls back to the snapshot');
+  assert.deepEqual(down.entries, snapshotLog(logs.inquiry).entries, 'falls back to the snapshot');
+  const payDown = await fetchLog(logs.payment, 'http://127.0.0.1:59999', 1500);
+  assert.deepEqual(payDown.entries, snapshotLog(logs.payment).entries, 'each log falls back to its own snapshot');
 });
 
-test('the committed snapshot reads cleanly, so the fallback always has something to show', () => {
-  const s = snapshotLog();
-  assert.ok(s.inquiries.length > 0);
-  assert.ok(s.inquiries.every((q) => q.request.length > 0 && !Number.isNaN(Date.parse(q.at))));
+test('the committed snapshots read cleanly, so the fallback always has something to show', () => {
+  for (const kind of Object.values(logs)) {
+    const s = snapshotLog(kind);
+    assert.ok(s.url.endsWith(kind.path), kind.id);
+    assert.ok(s.entries.length > 0, kind.id);
+    assert.ok(s.entries.every((q) => q.request.length > 0 && !Number.isNaN(Date.parse(q.at))), kind.id);
+  }
 });
 
 test('times read as the Pakistan calendar day and a plain "ago"', () => {

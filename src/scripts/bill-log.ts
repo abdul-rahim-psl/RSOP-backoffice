@@ -1,5 +1,5 @@
-// Result chips, search and the details drawer over the inquiry log. Without it the page still works:
-// each row's Details link jumps to that inquiry's card below the table.
+// Result chips, search and the details drawer over a bill log. Without it the page still works:
+// each row's Details link jumps to that entry's card below the table.
 
 const log = document.querySelector<HTMLElement>('[data-log]');
 const drawer = document.querySelector<HTMLDialogElement>('[data-drawer]');
@@ -14,12 +14,14 @@ if (log && drawer) {
   const copyStatus = drawer.querySelector<HTMLElement>('[data-copy-status]')!;
   const [newer, older] = [...drawer.querySelectorAll<HTMLButtonElement>('[data-step]')];
   const outcomes = chips.map((c) => c.dataset.show!);
+  // The log's id prefix ("inq", "pay"), its noun and where this browser keeps its last-seen time.
+  const { anchor = 'inq', many = 'entries', seenKey = 'rsop-inquiries-seen' } = log.dataset;
   let show = 'all';
   let openId: string | null = null;
   /** Where each card lives in the no-script list, so closing the drawer can put it back. */
   const homes = new Map<string, HTMLElement>();
 
-  const card = (id: string) => document.getElementById(`inq-${id}`);
+  const card = (id: string) => document.getElementById(`${anchor}-${id}`);
   const rowOf = (id: string | null) => rows.find((r) => r.dataset.id === id);
   const shown = () => rows.filter((r) => !r.hidden);
 
@@ -30,7 +32,7 @@ if (log && drawer) {
     const q = search.value.trim();
     if (q) url.searchParams.set('q', q);
     else url.searchParams.delete('q');
-    url.hash = openId ? `inq-${openId}` : '';
+    url.hash = openId ? `${anchor}-${openId}` : '';
     history.replaceState(null, '', url);
   };
 
@@ -44,7 +46,7 @@ if (log && drawer) {
       if (on) n++;
     }
     empty.hidden = n > 0;
-    if (announce) status.textContent = `Showing ${n} of ${rows.length} inquiries`;
+    if (announce) status.textContent = `Showing ${n} of ${rows.length} ${many}`;
     syncUrl();
   };
 
@@ -65,7 +67,7 @@ if (log && drawer) {
     if (!homes.has(id) && next.parentElement) homes.set(id, next.parentElement);
     body.replaceChildren(next);
     body.scrollTop = 0;
-    drawer.setAttribute('aria-labelledby', `inq-${id}-h`);
+    drawer.setAttribute('aria-labelledby', `${anchor}-${id}-h`);
     rows.forEach((r) => r.toggleAttribute('data-current', r.dataset.id === id));
     openId = id;
     if (!drawer.open) drawer.showModal();
@@ -149,8 +151,7 @@ if (log && drawer) {
 
   // Rows newer than the newest one seen on this browser's last visit get a "New" tag.
   try {
-    const KEY = 'rsop-inquiries-seen';
-    const seen = Date.parse(localStorage.getItem(KEY) ?? '');
+    const seen = Date.parse(localStorage.getItem(seenKey) ?? '');
     const newest = rows[0]?.dataset.at;
     if (!Number.isNaN(seen)) {
       const fresh = rows.filter((r) => Date.parse(r.dataset.at ?? '') > seen);
@@ -161,14 +162,14 @@ if (log && drawer) {
         note.hidden = false;
       }
     }
-    if (newest) localStorage.setItem(KEY, newest);
+    if (newest) localStorage.setItem(seenKey, newest);
   } catch {}
 
   const params = new URLSearchParams(location.search);
   const wanted = params.get('show');
   if (wanted && outcomes.includes(wanted)) show = wanted;
   search.value = params.get('q') ?? '';
-  const hashId = location.hash.match(/^#inq-(\d+)$/)?.[1];
+  const hashId = location.hash.match(new RegExp(`^#${anchor}-(\\d+)$`))?.[1];
   apply(false);
   if (hashId && card(hashId)) open(hashId);
 }

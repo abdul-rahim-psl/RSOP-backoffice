@@ -1,16 +1,100 @@
-// The bill inquiry log: every inquiry the log API recorded, with its headers and the reply.
-// The server asks on every page load; the API fails CORS preflight, so the browser can't ask it directly.
+// The bill inquiry and bill payment logs: every call the log API recorded, with its headers and the reply.
+// Both logs share one shape. The server asks on every page load; the API fails CORS preflight, so the browser can't ask it directly.
 import type { Tone } from '../../lib/flow.ts';
-import snap from './inquiry-log.snapshot.json' with { type: 'json' };
+import inquirySnap from './inquiry-log.snapshot.json' with { type: 'json' };
+import paymentSnap from './payment-log.snapshot.json' with { type: 'json' };
 
-/** Overridden by RSOP_INQUIRY_LOG_BASE. */
+/** Overridden per log by its `env` variable. */
 export const LOG_BASE = 'http://10.0.150.35:7774';
-export const LOG_PATH = '/api/v1/billInquirylist';
 /** The API answers in about a second; this bounds a page load when it doesn't. */
 export const LOG_TIMEOUT_MS = 5000;
 
+export type LogId = 'inquiry' | 'payment';
+
+/** `returned`: SUCCESS (code 0). `error`: any other reply. `silent`: logged, with no reply recorded. */
+export type Outcome = 'returned' | 'error' | 'silent';
+
+export interface OutcomeInfo {
+  id: Outcome;
+  label: string;
+  tone: Tone;
+  means: string;
+}
+
+/** Where one log lives and the words its screen uses. */
+export interface LogKind {
+  id: LogId;
+  path: string;
+  env: string;
+  title: string;
+  /** "inquiry" / "inquiries"; the capitalised forms start a label, `aOne` carries its article. */
+  one: string;
+  many: string;
+  One: string;
+  Many: string;
+  aOne: string;
+  /** The KPI for successful calls, e.g. "Bills returned". */
+  okKpi: string;
+  /** Ends "SUCCESS came back in 130 ms, …". */
+  okStory: string;
+  /** The detail's label for the request time, and its section on the caller. */
+  asked: string;
+  whoAsked: string;
+  /** Prefixes each entry's element id, and so the deep link `#inq-123`. */
+  anchor: string;
+  outcomes: OutcomeInfo[];
+  snapshot: unknown;
+}
+
+export const logs: Record<LogId, LogKind> = {
+  inquiry: {
+    id: 'inquiry',
+    path: '/api/v1/billInquirylist',
+    env: 'RSOP_INQUIRY_LOG_BASE',
+    title: 'Bill inquiries',
+    one: 'inquiry',
+    many: 'inquiries',
+    One: 'Inquiry',
+    Many: 'Inquiries',
+    aOne: 'an inquiry',
+    okKpi: 'Bills returned',
+    okStory: 'so the bill was found',
+    asked: 'Asked',
+    whoAsked: 'Who asked',
+    anchor: 'inq',
+    outcomes: [
+      { id: 'returned', label: 'Bill returned', tone: 'ok', means: 'The reply was SUCCESS (code 0): the bill was found.' },
+      { id: 'error', label: 'Error reply', tone: 'fail', means: 'A reply came back with an error code, such as 101, Bill Reference not found.' },
+      { id: 'silent', label: 'No reply', tone: 'wait', means: 'The inquiry was logged, but no reply was recorded for it.' },
+    ],
+    snapshot: inquirySnap,
+  },
+  payment: {
+    id: 'payment',
+    path: '/api/v1/billPaymentlist',
+    env: 'RSOP_PAYMENT_LOG_BASE',
+    title: 'Bill payments',
+    one: 'payment',
+    many: 'payments',
+    One: 'Payment',
+    Many: 'Payments',
+    aOne: 'a payment',
+    okKpi: 'Paid',
+    okStory: 'so the bill was paid',
+    asked: 'Sent',
+    whoAsked: 'Who paid',
+    anchor: 'pay',
+    outcomes: [
+      { id: 'returned', label: 'Paid', tone: 'ok', means: 'The reply was SUCCESS (code 0): the bill was paid.' },
+      { id: 'error', label: 'Error reply', tone: 'fail', means: 'A reply came back with an error code, so the bill was not paid.' },
+      { id: 'silent', label: 'No reply', tone: 'wait', means: 'The payment was logged, but no reply was recorded for it.' },
+    ],
+    snapshot: paymentSnap,
+  },
+};
+
 /** One element of the API's answer, as it sends it. */
-export interface RawInquiry {
+export interface RawEntry {
   id: number;
   ipAddress: string | null;
   requestDate: string;
@@ -26,18 +110,9 @@ export interface RawInquiry {
   originalMessageId: string | null;
 }
 
-/** `returned`: SUCCESS (code 0). `error`: any other reply. `silent`: logged, with no reply recorded. */
-export type Outcome = 'returned' | 'error' | 'silent';
-
-export const outcomes: { id: Outcome; label: string; tone: Tone; means: string }[] = [
-  { id: 'returned', label: 'Bill returned', tone: 'ok', means: 'The reply was SUCCESS (code 0): the bill was found.' },
-  { id: 'error', label: 'Error reply', tone: 'fail', means: 'A reply came back with an error code, such as 101, Bill Reference not found.' },
-  { id: 'silent', label: 'No reply', tone: 'wait', means: 'The inquiry was logged, but no reply was recorded for it.' },
-];
-
 export type Header = [name: string, value: string];
 
-export interface Inquiry {
+export interface LogEntry {
   id: number;
   at: string;
   repliedAt: string | null;
@@ -69,7 +144,7 @@ export interface LogSource {
   live: boolean;
   url: string;
   fetchedAt: string;
-  inquiries: Inquiry[];
+  entries: LogEntry[];
   error?: string;
   tried?: string;
 }
@@ -100,7 +175,7 @@ export const isLoopback = (ip: string | null) =>
 
 const text = (v: unknown) => (typeof v === 'string' ? v : v == null ? null : String(v));
 
-export function toInquiry(r: RawInquiry): Inquiry {
+export function toEntry(r: RawEntry): LogEntry {
   const request = parseHeaders(text(r.requestHeaders));
   const response = parseHeaders(text(r.responseHeaders));
   const code = text(r.responseCode);
@@ -132,28 +207,30 @@ export function toInquiry(r: RawInquiry): Inquiry {
   };
 }
 
-const newestFirst = (a: Inquiry, b: Inquiry) => Date.parse(b.at) - Date.parse(a.at) || b.id - a.id;
+const newestFirst = (a: LogEntry, b: LogEntry) => Date.parse(b.at) - Date.parse(a.at) || b.id - a.id;
 
-/** The answer as inquiries, newest first; throws a short reason when it isn't a list of them. */
-export function readLog(body: unknown): Inquiry[] {
-  if (!Array.isArray(body)) throw new Error("Its answer wasn't a list of inquiries");
+/** The answer as entries, newest first; throws a short reason when it isn't a list of them. */
+export function readLog(body: unknown, kind: LogKind = logs.inquiry): LogEntry[] {
+  if (!Array.isArray(body)) throw new Error(`Its answer wasn't a list of ${kind.many}`);
   body.forEach((e, i) => {
     if (!e || typeof e !== 'object' || typeof e.id !== 'number' || typeof e.requestDate !== 'string' || Number.isNaN(Date.parse(e.requestDate)))
       throw new Error(`Entry ${i + 1} of its answer has no ID or request time`);
   });
-  return (body as RawInquiry[]).map(toInquiry).sort(newestFirst);
+  return (body as RawEntry[]).map(toEntry).sort(newestFirst);
 }
 
+export const logUrl = (kind: LogKind, base = process.env[kind.env] || LOG_BASE) => base.replace(/\/+$/, '') + kind.path;
+
 /** The committed snapshot: the tests' fixture, and what the page shows when the API can't be read. */
-export const snapshotLog = (): LogSource => {
-  const s = snap as LogSnapshot;
-  return { live: false, url: s.url, fetchedAt: s.fetchedAt, inquiries: readLog(s.entries) };
+export const snapshotLog = (kind: LogKind): LogSource => {
+  const s = kind.snapshot as LogSnapshot;
+  return { live: false, url: s.url, fetchedAt: s.fetchedAt, entries: readLog(s.entries, kind) };
 };
 
-export async function fetchInquiryLog(base = process.env.RSOP_INQUIRY_LOG_BASE || LOG_BASE, timeoutMs = LOG_TIMEOUT_MS): Promise<LogSource> {
-  const url = base.replace(/\/+$/, '') + LOG_PATH;
+export async function fetchLog(kind: LogKind, base?: string, timeoutMs = LOG_TIMEOUT_MS): Promise<LogSource> {
+  const url = logUrl(kind, base);
   const fetchedAt = new Date().toISOString();
-  const fail = (error: string): LogSource => ({ ...snapshotLog(), error, tried: url });
+  const fail = (error: string): LogSource => ({ ...snapshotLog(kind), error, tried: url });
   let res: Response;
   try {
     res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), headers: { accept: 'application/json' } });
@@ -167,7 +244,7 @@ export async function fetchInquiryLog(base = process.env.RSOP_INQUIRY_LOG_BASE |
     const body: unknown = await res.json().catch(() => {
       throw new Error("Its answer wasn't JSON");
     });
-    return { live: true, url, fetchedAt, inquiries: readLog(body) };
+    return { live: true, url, fetchedAt, entries: readLog(body, kind) };
   } catch (e) {
     return fail((e as Error).message);
   }
@@ -182,11 +259,11 @@ export interface LogSummary {
   oldest: string | null;
   /** Error replies by description, most common first. */
   errors: [desc: string, count: number][];
-  /** How many inquiries carry each request ID; more than one means the ID can't tell them apart. */
+  /** How many entries carry each request ID; more than one means the ID can't tell them apart. */
   requestIds: Map<string, number>;
 }
 
-export function summarize(list: Inquiry[]): LogSummary {
+export function summarize(list: LogEntry[]): LogSummary {
   const counts: Record<Outcome, number> = { returned: 0, error: 0, silent: 0 };
   const errors = new Map<string, number>();
   const requestIds = new Map<string, number>();
