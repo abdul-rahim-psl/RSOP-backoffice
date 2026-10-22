@@ -1,10 +1,10 @@
-// Result chips, search and the details drawer over a bill log. Without it the page still works:
-// each row's Details link jumps to that entry's card below the table.
+// Result chips, search and the details drawer over a bill log. It starts once the log's server island
+// has arrived; until then the page shows the loader.
+import { whenReady } from '../lib/when-ready';
 
-const log = document.querySelector<HTMLElement>('[data-log]');
-const drawer = document.querySelector<HTMLDialogElement>('[data-drawer]');
-
-if (log && drawer) {
+whenReady('[data-log]', (log) => {
+  const drawer = document.querySelector<HTMLDialogElement>('[data-drawer]');
+  if (!drawer) return;
   const rows = [...log.querySelectorAll<HTMLTableRowElement>('tr[data-row]')];
   const chips = [...log.querySelectorAll<HTMLButtonElement>('button[data-show]')];
   const search = log.querySelector<HTMLInputElement>('[data-search]')!;
@@ -172,4 +172,4 @@ if (log && drawer) {
   const hashId = location.hash.match(new RegExp(`^#${anchor}-(\\d+)$`))?.[1];
   apply(false);
   if (hashId && card(hashId)) open(hashId);
-}
+});

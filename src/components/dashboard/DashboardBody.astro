@@ -1,0 +1,259 @@
+---
+// The dashboard's content: every figure counted from the two log APIs, read on the server. The page renders it
+// as a server island, so a loader shows at once and this replaces it when both logs have been read.
+import '../../styles/dashboard.css';
+import Icon from '../Icon.astro';
+import ToneIcon from '../ToneIcon.astro';
+import StatTile from './StatTile.astro';
+import AttentionTile from './AttentionTile.astro';
+import HourlyChart from './HourlyChart.astro';
+import FunnelChart from './FunnelChart.astro';
+import ProblemsChart from './ProblemsChart.astro';
+import LatestTable from './LatestTable.astro';
+import { fetchLog, logs, type LogId } from '../../data/api/bill-log';
+import { buildDashboard, type LogDay } from '../../data/dashboard';
+import { delta, duration, int, pct, pkt, pktLongDay, pktTime } from '../../lib/format';
+
+const [inqSrc, paySrc] = await Promise.all([fetchLog(logs.inquiry), fetchLog(logs.payment)]);
+const now = new Date();
+const d = buildDashboard(inqSrc, paySrc, now);
+const { inquiry: inq, payment: pay } = d;
+const sources = [
+  { id: 'inquiry' as LogId, src: inqSrc },
+  { id: 'payment' as LogId, src: paySrc },
+];
+const stale = sources.filter((s) => !s.src.live);
+const page: Record<LogId, string> = { inquiry: '/inquiries/', payment: '/payments/' };
+
+const pill = stale.length
+  ? {
+      tone: 'wait',
+      text: stale.length === 2 ? 'Logs unreachable · snapshots' : `${logs[stale[0].id].One} log unreachable · snapshot`,
+      about: stale.map((s) => `${s.src.tried} could not be read (${s.src.error})`).join('; '),
+    }
+  : { tone: 'ok', text: `Live · read ${pktTime(d.asOf)}`, about: `Both logs read at ${pkt(d.asOf)} PKT` };
+
+const vs = 'vs this time yesterday';
+/** A delta only when the log reaches back to yesterday and had something to compare with. */
+const change = (now: number, before: number | null) => {
+  if (!before) return undefined;
+  const c = delta(now, before);
+  return { text: c.text, good: c.up, vs };
+};
+const perHour = (day: LogDay) => day.hourly.ok.map((n, i) => n + day.hourly.error[i] + day.hourly.silent[i]);
+const total = inq.sum.total + pay.sum.total;
+const when = d.today ? `today, up to ${pktTime(d.asOf)} PKT` : `on ${pktLongDay(d.asOf)}, up to the snapshot at ${pktTime(d.asOf)} PKT`;
+
+const attention = sources.flatMap(({ id }) => {
+  const day = d[id];
+  const kind = logs[id];
+  return [
+    ...(day.sum.counts.error
+      ? [
+          {
+            tone: 'fail' as const,
+            value: day.sum.counts.error,
+            label: `${kind.One} ${day.sum.counts.error === 1 ? 'error' : 'errors'}`,
+            note: day.sum.errors
+              .slice(0, 2)
+              .map(([desc, n]) => (n > 1 ? `${desc} (${n})` : desc))
+              .join(' · '),
+            href: `${page[id]}?show=error#log`,
+          },
+        ]
+      : []),
+    ...(day.sum.counts.silent
+      ? [
+          {
+            tone: 'wait' as const,
+            value: day.sum.counts.silent,
+            label: `${day.sum.counts.silent === 1 ? kind.One : kind.Many} with no reply`,
+            note: 'Logged, but no reply was recorded',
+            href: `${page[id]}?show=silent#log`,
+          },
+        ]
+      : []),
+  ];
+});
+---
+
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Back office</p>
+    <h1 class="title">Dashboard<span class="pd">.</span></h1>
+    <p>Bill inquiries and payments for {pktLongDay(d.asOf)}, counted from the logs.</p>
+  </div>
+  <div class="head-tools">
+    <span class="pill" data-tone={pill.tone} title={pill.about}>
+      {pill.text}
+      <span class="sr-only">: {pill.about}</span>
+    </span>
+    <a class="btn" href=""><Icon name="retry" size={16} />Refresh</a>
+  </div>
+</div>
+
+<section aria-labelledby="stats-h">
+  <div class="section-head first">
+    <h2 id="stats-h">Bill-pay activity<span class="pd">.</span></h2>
+    <p>Every figure counts {when}.</p>
+  </div>
+
+  {
+    total === 0 ? (
+      <p class="all-clear">
+        <ToneIcon tone="info" />
+        Nothing logged {d.today ? 'yet today' : 'that day'}. Refresh after the next inquiry or payment.
+      </p>
+    ) : (
+      <>
+        <div class="kpis">
+          <StatTile
+            hero
+            label="Bills paid"
+            value={int(pay.sum.counts.returned)}
+            sub={pay.sum.total ? `${pct(pay.sum.counts.returned, pay.sum.total, 0)} of ${int(pay.sum.total)} payments came back SUCCESS` : 'No payments yet'}
+            delta={change(pay.sum.counts.returned, pay.yesterdayOk)}
+            trend={pay.hourly.ok}
+          />
+          <StatTile
+            label="Bill inquiries"
+            value={int(inq.sum.total)}
+            sub={inq.sum.total ? `${pct(inq.sum.counts.returned, inq.sum.total, 0)} returned a bill` : undefined}
+            delta={change(inq.sum.total, inq.yesterday)}
+            trend={perHour(inq)}
+          />
+          <StatTile
+            label="Payments"
+            value={int(pay.sum.total)}
+            sub={pay.sum.total ? `${int(pay.sum.counts.returned)} paid · ${int(pay.sum.counts.silent)} no reply` : undefined}
+            delta={change(pay.sum.total, pay.yesterday)}
+            trend={perHour(pay)}
+          />
+          <StatTile
+            label="Typical reply time"
+            value={d.medianMs !== null ? duration(d.medianMs) : '—'}
+            sub={`Inquiries ${inq.sum.medianMs !== null ? duration(inq.sum.medianMs) : '—'} · payments ${pay.sum.medianMs !== null ? duration(pay.sum.medianMs) : '—'}`}
+          />
+        </div>
+
+        <div class="attention">
+          <p class="seclabel">Needs attention</p>
+          {attention.length ? (
+            <div class="att-grid">
+              {attention.map((a) => (
+                <AttentionTile tone={a.tone} value={int(a.value)} label={a.label} note={a.note} href={a.href} />
+              ))}
+            </div>
+          ) : (
+            <p class="all-clear">
+              <ToneIcon tone="ok" />
+              Nothing needs attention: every inquiry and payment came back SUCCESS.
+            </p>
+          )}
+        </div>
+
+        <div class="pair">
+          <HourlyChart title="Payments per hour" note="Bill payments logged, by result" hours={d.hours} hourly={pay.hourly} okLabel="Paid" href="/payments/" />
+          <HourlyChart title="Inquiries per hour" note="Bill inquiries logged, by result" hours={d.hours} hourly={inq.hourly} okLabel="Bill returned" href="/inquiries/" />
+        </div>
+
+        <div class="pair">
+          <FunnelChart
+            stages={[
+              { label: 'Inquiries', value: inq.sum.total },
+              { label: 'Bills returned', value: inq.sum.counts.returned },
+              { label: 'Payments sent', value: pay.sum.total },
+              { label: 'Paid', value: pay.sum.counts.returned },
+            ]}
+          />
+          <ProblemsChart days={{ inquiry: inq, payment: pay }} />
+        </div>
+      </>
+    )
+  }
+</section>
+
+{d.latest.length > 0 && <LatestTable latest={d.latest} now={now} />}
+
+<style>
+  .period {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    color: var(--ink-2);
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  .section-head.first {
+    margin-top: 6px;
+  }
+
+  .kpis {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .attention {
+    display: grid;
+    gap: 10px;
+    margin: 22px 0;
+  }
+
+  .att-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .all-clear {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--mut);
+    font-weight: 700;
+  }
+
+  .head-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .head-tools .pill {
+    padding: 6px 12px;
+    font-size: 0.74rem;
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+  }
+
+  @media (max-width: 1080px) {
+    .kpis {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .kpis > :global(.hero) {
+      grid-column: 1 / -1;
+    }
+
+    .pair {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .kpis {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

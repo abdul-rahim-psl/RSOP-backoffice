@@ -3,6 +3,10 @@ import Base from '../layouts/Base.astro';
 import Brand from '../components/Brand.astro';
 import Icon from '../components/Icon.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
+import { safeNext } from '../lib/session';
+
+// The screen asked for before signing in, so the form can go back to it.
+const next = safeNext(Astro.url.searchParams.get('next'));
 
 // KJ's pipeline, left to right, as a quiet illustration beside the form.
 const line = [
@@ -27,15 +31,16 @@ const line = [
           <Icon name="info" size={15} />
           <span>This draft has no real sign-in. Any username and password will do.</span>
         </p>
-        <!-- No name attributes: nothing typed here can ever end up in a URL. -->
-        <form class="form" action="/dashboard/" method="get" data-signin>
+        <!-- No name attributes on the inputs: what is typed here is never sent, only where to go next. -->
+        <form class="form" action="/signin" method="post" data-signin>
+          <input type="hidden" name="next" value={next} />
           <label class="field">
             <span>Username</span>
-            <input class="input" type="text" autocomplete="username" required placeholder="hina.malik" />
+            <input class="input" type="text" autocomplete="username" required />
           </label>
           <label class="field">
             <span>Password</span>
-            <input class="input" type="password" autocomplete="current-password" required placeholder="••••••••" />
+            <input class="input" type="password" autocomplete="current-password" required />
           </label>
           <button class="btn primary wide" type="submit">
             Sign in
@@ -78,14 +83,6 @@ const line = [
     <footer class="foot">First draft on mock data. Every person, bank, bill and figure is fictional.</footer>
   </div>
 </Base>
-
-<script>
-  const form = document.querySelector<HTMLFormElement>('[data-signin]');
-  form?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    location.assign('/dashboard/');
-  });
-</script>
 
 <style>
   .signin {

@@ -49,6 +49,12 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
       )
     }
     <ThemeToggle />
+    <form class="out" action="/logout" method="post">
+      <button class="btn out-btn" type="submit" aria-label="Log out">
+        <Icon name="logout" size={16} />
+        <span class="out-word">Log out</span>
+      </button>
+    </form>
     <button class="me" type="button" popovertarget="me-menu" aria-label={`${me.name}, account menu`}>
       <span aria-hidden="true">{initials(me.name)}</span>
     </button>
@@ -62,7 +68,9 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
   <p class="who">{me.name}</p>
   <p class="mail">{me.email}</p>
   <p class="role"><span class="pill" data-tone="info">{me.role}</span></p>
-  <a class="pop-link" href="/"><Icon name="logout" size={16} />Sign out</a>
+  <form action="/logout" method="post">
+    <button class="pop-link" type="submit"><Icon name="logout" size={16} />Log out</button>
+  </form>
 </div>
 
 <div id="nav-menu" class="pop glass" popover>
@@ -82,6 +90,9 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
       <p class="mock-line"><Icon name="flag" size={14} />Mock data: nothing here is live</p>
     )
   }
+  <form action="/logout" method="post">
+    <button class="pop-link" type="submit"><Icon name="logout" size={16} />Log out</button>
+  </form>
 </div>
 
 <style>
@@ -120,6 +131,19 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
     transition:
       color 0.15s,
       background 0.15s;
+  }
+
+  button.pop-link {
+    width: 100%;
+    background: none;
+    font: inherit;
+    font-size: 0.86rem;
+    cursor: pointer;
+  }
+
+  .out-btn {
+    min-height: 36px;
+    padding: 6px 14px;
   }
 
   .nav a:hover,
@@ -249,6 +273,16 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
 
     .menu-btn {
       display: grid;
+    }
+
+    /* On phones Log out keeps its icon and its accessible name. */
+    .out-btn {
+      width: 36px;
+      padding: 0;
+    }
+
+    .out-word {
+      display: none;
     }
   }
 

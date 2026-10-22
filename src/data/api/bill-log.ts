@@ -6,8 +6,8 @@ import paymentSnap from './payment-log.snapshot.json' with { type: 'json' };
 
 /** Overridden per log by its `env` variable. */
 export const LOG_BASE = 'http://10.0.150.35:7774';
-/** The API answers in about a second; this bounds a page load when it doesn't. */
-export const LOG_TIMEOUT_MS = 5000;
+/** The payment log has taken 5–7 s to answer; the page shows a loader meanwhile, and this bounds the wait. */
+export const LOG_TIMEOUT_MS = 15_000;
 
 export type LogId = 'inquiry' | 'payment';
 

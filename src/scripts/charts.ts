@@ -1,13 +1,15 @@
 // One tooltip for every chart mark: shown on hover and on keyboard focus, built with textContent only.
+import { whenReady } from '../lib/when-ready';
 
 interface TipData {
   title: string;
   rows: { value: string; label: string; key?: string }[];
 }
 
-const marks = [...document.querySelectorAll<HTMLElement>('[data-tip]')];
+// The marks arrive with the dashboard's server island, after this script has run.
+whenReady('[data-tip]', () => {
+  const marks = [...document.querySelectorAll<HTMLElement>('[data-tip]')];
 
-if (marks.length) {
   const tip = document.createElement('div');
   tip.className = 'viz-tip';
   tip.hidden = true;
@@ -56,4 +58,4 @@ if (marks.length) {
     el.addEventListener('blur', hide);
   }
   addEventListener('scroll', hide, { passive: true });
-}
+});
