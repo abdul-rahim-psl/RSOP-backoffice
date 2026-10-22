@@ -15,12 +15,12 @@
 
 ## Overview
 
-A first-draft UI for the RSOP back office, built from KJ's HLD sketch ([pics/](pics/), upright copy in [docs/sketch-upright.jpg](docs/sketch-upright.jpg)). The Designer's steps come from RSOP's flow API, fetched by the preview server on every page load (see [The flow API](#the-flow-api)). Everything else runs on mock data, and the browser itself connects to nothing: not RSOP, Raast, RabbitMQ or a biller. The plan behind it is in [docs/executive-summary.md](docs/executive-summary.md) and [docs/details.md](docs/details.md).
+A first-draft UI for the RSOP back office, built from KJ's HLD sketch ([pics/](pics/), upright copy in [docs/sketch-upright.jpg](docs/sketch-upright.jpg)). The Designer's steps come from RSOP's flow API, and the dashboard, Inquiries and Payments from the bill log APIs, each fetched by the preview server on every page load (see [The flow API](#the-flow-api) and [The bill log APIs](#the-bill-log-apis)). Everything else runs on mock data, and the browser itself connects to nothing: not RSOP, Raast, RabbitMQ or a biller. The plan behind it is in [docs/executive-summary.md](docs/executive-summary.md) and [docs/details.md](docs/details.md).
 
 | Route | Screen |
 |---|---|
 | `/` | Sign in: any username and password go to the dashboard |
-| `/dashboard/` | Bill-pay stats (collected, payments per hour, funnel, bill types) and billing (the bill ledger, filterable) |
+| `/dashboard/` | Bill-pay activity, **live**: today's counts from both logs (bills paid, inquiries, payments, reply times), needs-attention tiles, payments and inquiries per hour, the inquiry-to-paid funnel, what didn't come back SUCCESS, and the latest entries. No amounts: the logs don't carry them |
 | `/inquiries/` | Bill inquiries, **live**: every inquiry the log API recorded, with result, reply time and caller; a drawer per inquiry with IDs, participants and headers. Shown to the Admin role |
 | `/payments/` | Bill payments, **live**: the same screen over the payment log, with "Paid" for SUCCESS. Shown to the Admin role |
 | `/designer/inquiry/` | RSOP Designer, Inquiry flow: the API's chain, which is KJ's pipeline plus the gateway; YAML params; one sample transaction, "FBR", on a timeline |
@@ -104,12 +104,11 @@ Two logs on `http://10.0.150.35:7774`, with the same entry shape. The server rea
 | Reading a chain string | `src/lib/chain.ts` |
 | Pulling or checking the snapshot | `tools/api-pull.ts` |
 | Shared sample bills and references | `src/data/sample.ts` |
-| Dashboard figures and the bill ledger | `src/data/dashboard.ts`, `src/data/bills.ts` |
 | Users, roles and permissions | `src/data/users.ts` |
 | Flow types, lane and grid layout, graph checks, state at a timeline position | `src/lib/flow.ts` |
 | Data → coloured YAML | `src/lib/yaml.ts` |
 | The Designer (rail, canvas, timeline, inspector) | `src/components/designer/`, `src/scripts/designer.ts`, `src/styles/designer.css` |
-| Dashboard tiles and charts | `src/components/dashboard/`, `src/scripts/charts.ts`, `src/scripts/billing.ts`, `src/styles/dashboard.css` |
+| Dashboard figures (all from the logs), tiles and charts | `src/data/dashboard.ts`, `src/components/dashboard/`, `src/scripts/charts.ts`, `src/styles/dashboard.css` |
 | Colour, type and glass tokens | `src/styles/global.css` |
 
 ## How the Designer works

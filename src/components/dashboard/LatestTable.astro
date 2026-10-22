@@ -1,0 +1,115 @@
+---
+import Icon from '../Icon.astro';
+import StatusPill from '../StatusPill.astro';
+import { logs, type LogEntry, type LogId } from '../../data/api/bill-log';
+import { ago, duration, pktWhen } from '../../lib/format';
+
+interface Props {
+  latest: { log: LogId; entry: LogEntry }[];
+  now: Date;
+}
+
+const { latest, now } = Astro.props;
+const page: Record<LogId, string> = { inquiry: '/inquiries/', payment: '/payments/' };
+---
+
+<section class="latest" aria-labelledby="latest-h">
+  <div class="section-head">
+    <h2 id="latest-h">Latest activity<span class="pd">.</span></h2>
+    <p>The newest inquiries and payments today, from both logs. Each opens in its log.</p>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="sr-only">Latest inquiries and payments today, newest first</caption>
+      <thead>
+        <tr>
+          <th scope="col">Time</th>
+          <th scope="col">Log</th>
+          <th scope="col">Bill reference</th>
+          <th scope="col">Result</th>
+          <th scope="col" class="num">Reply time</th>
+          <th scope="col"><span class="sr-only">Details</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          latest.map(({ log, entry: q }) => {
+            const kind = logs[log];
+            const o = kind.outcomes.find((x) => x.id === q.outcome)!;
+            return (
+              <tr>
+                <td class="when">
+                  <time datetime={q.at}>{pktWhen(q.at, now)}</time>
+                  <span class="sub">{ago(q.at, now)}</span>
+                </td>
+                <td>{kind.One}</td>
+                <td class="mono">{q.billRef ?? <span class="none">none</span>}</td>
+                <td>
+                  <StatusPill
+                    tone={o.tone}
+                    code={q.outcome === 'error' ? (q.code ?? undefined) : undefined}
+                    word={q.outcome === 'error' ? q.desc || o.label : o.label}
+                  />
+                </td>
+                <td class="num">{q.replyMs !== null ? duration(q.replyMs) : <span class="none">—</span>}</td>
+                <td class="go">
+                  <a href={`${page[log]}#${kind.anchor}-${q.id}`} aria-label={`Details of ${kind.one} ${q.id}`}>
+                    Details
+                    <Icon name="arrow" size={13} />
+                  </a>
+                </td>
+              </tr>
+            );
+          })
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<style>
+  .latest {
+    margin-top: 34px;
+  }
+
+  .when time {
+    display: block;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .sub {
+    display: block;
+    color: var(--mut);
+    font-size: 0.74rem;
+  }
+
+  td.mono,
+  td.num {
+    white-space: nowrap;
+  }
+
+  .none {
+    color: var(--faint);
+  }
+
+  .go {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .go a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--select);
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .go a:hover {
+    text-decoration: underline;
+  }
+</style>

@@ -1,25 +1,29 @@
 ---
 import Icon from '../Icon.astro';
 import BarRows from './BarRows.astro';
-import { funnel } from '../../data/dashboard';
 import { int, pct } from '../../lib/format';
 
 // Ordered stages take the ordinal blue ramp (validated with --ordinal), so the order shows in the colour too.
-const rows = funnel.map((s, i) => {
-  const prev = funnel[i - 1];
-  const share = prev ? `${pct(s.value, prev.value)} of ${prev.label.toLowerCase()}` : undefined;
+interface Props {
+  stages: { label: string; value: number }[];
+}
+
+const { stages } = Astro.props;
+const share = (i: number) => (i && stages[i - 1].value ? pct(stages[i].value, stages[i - 1].value) : null);
+const rows = stages.map((s, i) => {
+  const prev = stages[i - 1];
+  const of = share(i);
   return {
     label: s.label,
-    code: s.code,
     value: s.value,
     shown: int(s.value),
-    note: share,
+    note: of ? `${of} of ${prev.label.toLowerCase()}` : undefined,
     color: `var(--viz-o${i + 1})`,
     tip: {
-      title: s.code ? `${s.label} (${s.code})` : s.label,
+      title: s.label,
       rows: [
         { value: int(s.value), label: 'today', key: `var(--viz-o${i + 1})` },
-        ...(share ? [{ value: pct(s.value, prev!.value), label: `of ${prev!.label.toLowerCase()}` }] : []),
+        ...(of ? [{ value: of, label: `of ${prev!.label.toLowerCase()}` }] : []),
       ],
     },
   };
@@ -28,11 +32,11 @@ const rows = funnel.map((s, i) => {
 
 <figure class="chart glass">
   <div class="chart-head">
-    <h3>From inquiry to marked bill</h3>
-    <p>Each stage as a share of the one before</p>
+    <h3>From inquiry to paid bill</h3>
+    <p>Counts from both logs; a payment isn't matched to its inquiry</p>
   </div>
 
-  <BarRows rows={rows} max={funnel[0].value} />
+  <BarRows rows={rows} max={Math.max(1, ...stages.map((s) => s.value))} />
 
   <details class="table-view">
     <summary><Icon name="table" size={15} />Show as a table</summary>
@@ -41,13 +45,11 @@ const rows = funnel.map((s, i) => {
         <thead><tr><th>Stage</th><th class="num">Today</th><th class="num">Of the stage before</th></tr></thead>
         <tbody>
           {
-            funnel.map((s, i) => (
+            stages.map((s, i) => (
               <tr>
-                <td>
-                  {s.label} {s.code && <span class="mono muted">{s.code}</span>}
-                </td>
+                <td>{s.label}</td>
                 <td class="num">{int(s.value)}</td>
-                <td class="num">{i ? pct(s.value, funnel[i - 1].value) : '—'}</td>
+                <td class="num">{share(i) ?? '—'}</td>
               </tr>
             ))
           }

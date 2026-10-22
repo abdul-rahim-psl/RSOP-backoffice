@@ -1,0 +1,91 @@
+---
+import Icon from '../Icon.astro';
+import ToneIcon from '../ToneIcon.astro';
+import BarRows from './BarRows.astro';
+import { logs, type LogId } from '../../data/api/bill-log';
+import type { LogDay } from '../../data/dashboard';
+import { int } from '../../lib/format';
+
+// Reasons are nominal, so every bar takes the one series colour; a single series needs no legend.
+interface Props {
+  days: Record<LogId, LogDay>;
+}
+
+const { days } = Astro.props;
+const reasons = (Object.keys(days) as LogId[])
+  .flatMap((id) => {
+    const { sum } = days[id];
+    const page = id === 'inquiry' ? '/inquiries/' : '/payments/';
+    return [
+      ...sum.errors.map(([desc, n]) => ({ log: logs[id].One, reason: desc, n, href: `${page}?show=error#log` })),
+      ...(sum.counts.silent ? [{ log: logs[id].One, reason: 'No reply', n: sum.counts.silent, href: `${page}?show=silent#log` }] : []),
+    ];
+  })
+  .sort((a, b) => b.n - a.n);
+
+const rows = reasons.map((r) => ({
+  label: `${r.log}: ${r.reason}`,
+  value: r.n,
+  shown: int(r.n),
+  color: 'var(--viz-1)',
+  tip: { title: `${r.log}: ${r.reason}`, rows: [{ value: int(r.n), label: 'today', key: 'var(--viz-1)' }] },
+}));
+---
+
+<figure class="chart glass">
+  <div class="chart-head">
+    <h3>What didn't come back SUCCESS</h3>
+    <p>Error replies by reason, and calls with no reply</p>
+  </div>
+
+  {
+    rows.length ? (
+      <>
+        <BarRows rows={rows} max={rows[0].value} />
+        <details class="table-view">
+          <summary>
+            <Icon name="table" size={15} />
+            Show as a table
+          </summary>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Log</th>
+                  <th>Reason</th>
+                  <th class="num">Today</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reasons.map((r) => (
+                  <tr>
+                    <td>{r.log}</td>
+                    <td>
+                      <a href={r.href}>{r.reason}</a>
+                    </td>
+                    <td class="num">{int(r.n)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </>
+    ) : (
+      <p class="all-clear">
+        <ToneIcon tone="ok" />
+        Every inquiry and payment today came back SUCCESS.
+      </p>
+    )
+  }
+</figure>
+
+<style>
+  .all-clear {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--mut);
+    font-weight: 700;
+  }
+</style>

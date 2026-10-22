@@ -2,104 +2,209 @@
 import '../styles/dashboard.css';
 import App from '../layouts/App.astro';
 import Icon from '../components/Icon.astro';
+import ToneIcon from '../components/ToneIcon.astro';
 import StatTile from '../components/dashboard/StatTile.astro';
 import AttentionTile from '../components/dashboard/AttentionTile.astro';
 import HourlyChart from '../components/dashboard/HourlyChart.astro';
 import FunnelChart from '../components/dashboard/FunnelChart.astro';
-import TypeChart from '../components/dashboard/TypeChart.astro';
-import BillsTable from '../components/dashboard/BillsTable.astro';
-import { asOf, hourly, successRate, totals, yesterday } from '../data/dashboard';
-import { compactPkr, delta, int, pct } from '../lib/format';
+import ProblemsChart from '../components/dashboard/ProblemsChart.astro';
+import LatestTable from '../components/dashboard/LatestTable.astro';
+import { fetchLog, logs, type LogId } from '../data/api/bill-log';
+import { buildDashboard, type LogDay } from '../data/dashboard';
+import { delta, duration, int, pct, pkt, pktLongDay, pktTime, pktWhen } from '../lib/format';
+
+// Every figure is counted from the two log APIs on each request; nothing on this page is mock.
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const [inqSrc, paySrc] = await Promise.all([fetchLog(logs.inquiry), fetchLog(logs.payment)]);
+const now = new Date();
+const d = buildDashboard(inqSrc, paySrc, now);
+const { inquiry: inq, payment: pay } = d;
+const sources = [
+  { id: 'inquiry' as LogId, src: inqSrc },
+  { id: 'payment' as LogId, src: paySrc },
+];
+const stale = sources.filter((s) => !s.src.live);
+const page: Record<LogId, string> = { inquiry: '/inquiries/', payment: '/payments/' };
+
+const pill = stale.length
+  ? {
+      tone: 'wait',
+      text: stale.length === 2 ? 'Logs unreachable · snapshots' : `${logs[stale[0].id].One} log unreachable · snapshot`,
+      about: stale.map((s) => `${s.src.tried} could not be read (${s.src.error})`).join('; '),
+    }
+  : { tone: 'ok', text: `Live · read ${pktTime(d.asOf)}`, about: `Both logs read at ${pkt(d.asOf)} PKT` };
 
 const vs = 'vs this time yesterday';
-const collected = delta(totals.collected, yesterday.collected);
-const inquiries = delta(totals.inquiries, yesterday.inquiries);
-const payments = delta(totals.payments, yesterday.payments);
-const rateChange = successRate - yesterday.successRate;
-const attempted = hourly.settled.map((s, i) => s + hourly.refused[i] + hourly.awaiting[i]);
+/** A delta only when the log reaches back to yesterday and had something to compare with. */
+const change = (now: number, before: number | null) => {
+  if (!before) return undefined;
+  const c = delta(now, before);
+  return { text: c.text, good: c.up, vs };
+};
+const perHour = (day: LogDay) => day.hourly.ok.map((n, i) => n + day.hourly.error[i] + day.hourly.silent[i]);
+const total = inq.sum.total + pay.sum.total;
+const when = d.today ? `today, up to ${pktTime(d.asOf)} PKT` : `on ${pktLongDay(d.asOf)}, up to the snapshot at ${pktTime(d.asOf)} PKT`;
+
+const attention = sources.flatMap(({ id }) => {
+  const day = d[id];
+  const kind = logs[id];
+  return [
+    ...(day.sum.counts.error
+      ? [
+          {
+            tone: 'fail' as const,
+            value: day.sum.counts.error,
+            label: `${kind.One} ${day.sum.counts.error === 1 ? 'error' : 'errors'}`,
+            note: day.sum.errors
+              .slice(0, 2)
+              .map(([desc, n]) => (n > 1 ? `${desc} (${n})` : desc))
+              .join(' · '),
+            href: `${page[id]}?show=error#log`,
+          },
+        ]
+      : []),
+    ...(day.sum.counts.silent
+      ? [
+          {
+            tone: 'wait' as const,
+            value: day.sum.counts.silent,
+            label: `${day.sum.counts.silent === 1 ? kind.One : kind.Many} with no reply`,
+            note: 'Logged, but no reply was recorded',
+            href: `${page[id]}?show=silent#log`,
+          },
+        ]
+      : []),
+  ];
+});
 ---
 
-<App title="Dashboard" description="Bill-pay stats and billing for the RSOP back office, on mock data.">
+<App title="Dashboard" description="Bill-pay activity for the RSOP back office, counted live from the bill inquiry and payment logs." live="the bill inquiry and payment logs">
   <div class="page-head">
     <div>
       <p class="eyebrow">Back office</p>
       <h1 class="title">Dashboard<span class="pd">.</span></h1>
-      <p>Bill-pay stats and billing for {asOf.day}.</p>
+      <p>Bill inquiries and payments for {pktLongDay(d.asOf)}, counted from the logs.</p>
     </div>
-    <p class="period"><Icon name="clock" size={15} />{asOf.short} · as of {asOf.time}</p>
+    <div class="head-tools">
+      <span class="pill" data-tone={pill.tone} title={pill.about}>
+        {pill.text}
+        <span class="sr-only">: {pill.about}</span>
+      </span>
+      <a class="btn" href=""><Icon name="retry" size={16} />Refresh</a>
+    </div>
   </div>
+
+  {
+    stale.length > 0 && (
+      <div class="stale" role="status">
+        <ToneIcon tone="wait" />
+        <p>
+          {stale.map((s) => (
+            <span>
+              <strong>Couldn't read the {logs[s.id].one} log, so its figures come from the snapshot taken {pktWhen(s.src.fetchedAt, now)}.</strong>
+              <span class="muted">
+                {' '}
+                {s.src.error}: <span class="mono">{s.src.tried}</span>
+              </span>{' '}
+            </span>
+          ))}
+        </p>
+        <a class="btn" href="">
+          <Icon name="retry" size={16} />
+          Try again
+        </a>
+      </div>
+    )
+  }
 
   <section aria-labelledby="stats-h">
     <div class="section-head first">
-      <h2 id="stats-h">Bill-pay stats<span class="pd">.</span></h2>
-      <p>Every figure counts today only, up to {asOf.time}.</p>
+      <h2 id="stats-h">Bill-pay activity<span class="pd">.</span></h2>
+      <p>Every figure counts {when}.</p>
     </div>
 
-    <div class="kpis">
-      <StatTile
-        hero
-        label="Collected today"
-        value={compactPkr(totals.collected)}
-        sub={`${int(totals.acsp)} settled payments`}
-        delta={{ text: collected.text, good: collected.up, vs }}
-        trend={hourly.settled}
-      />
-      <StatTile
-        label="Bill inquiries"
-        value={int(totals.inquiries)}
-        delta={{ text: inquiries.text, good: inquiries.up, vs }}
-        trend={hourly.inquiries}
-      />
-      <StatTile label="Payments" value={int(totals.payments)} delta={{ text: payments.text, good: payments.up, vs }} trend={attempted} />
-      <StatTile
-        label="Success rate"
-        value={`${successRate.toFixed(1)}%`}
-        sub="Settled ÷ payments"
-        delta={{ text: `${rateChange >= 0 ? '+' : '−'}${Math.abs(rateChange).toFixed(1)} pt`, good: rateChange >= 0, vs }}
-      />
-    </div>
+    {
+      total === 0 ? (
+        <p class="all-clear">
+          <ToneIcon tone="info" />
+          Nothing logged {d.today ? 'yet today' : 'that day'}. Refresh after the next inquiry or payment.
+        </p>
+      ) : (
+        <>
+          <div class="kpis">
+            <StatTile
+              hero
+              label="Bills paid"
+              value={int(pay.sum.counts.returned)}
+              sub={pay.sum.total ? `${pct(pay.sum.counts.returned, pay.sum.total, 0)} of ${int(pay.sum.total)} payments came back SUCCESS` : 'No payments yet'}
+              delta={change(pay.sum.counts.returned, pay.yesterdayOk)}
+              trend={pay.hourly.ok}
+            />
+            <StatTile
+              label="Bill inquiries"
+              value={int(inq.sum.total)}
+              sub={inq.sum.total ? `${pct(inq.sum.counts.returned, inq.sum.total, 0)} returned a bill` : undefined}
+              delta={change(inq.sum.total, inq.yesterday)}
+              trend={perHour(inq)}
+            />
+            <StatTile
+              label="Payments"
+              value={int(pay.sum.total)}
+              sub={pay.sum.total ? `${int(pay.sum.counts.returned)} paid · ${int(pay.sum.counts.silent)} no reply` : undefined}
+              delta={change(pay.sum.total, pay.yesterday)}
+              trend={perHour(pay)}
+            />
+            <StatTile
+              label="Typical reply time"
+              value={d.medianMs !== null ? duration(d.medianMs) : '—'}
+              sub={`Inquiries ${inq.sum.medianMs !== null ? duration(inq.sum.medianMs) : '—'} · payments ${pay.sum.medianMs !== null ? duration(pay.sum.medianMs) : '—'}`}
+            />
+          </div>
 
-    <div class="attention">
-      <p class="seclabel">Needs attention</p>
-      <div class="att-grid">
-        <AttentionTile
-          tone="fail"
-          value={int(totals.naut)}
-          label="Refused (NAUT)"
-          note={`${pct(totals.naut, totals.payments)} of payments; Raast sent RJCT`}
-          href="?status=refused#billing"
-        />
-        <AttentionTile
-          tone="wait"
-          value={int(totals.awaiting)}
-          label="Awaiting ACSP"
-          note="AUTH sent; settlement not confirmed yet"
-          href="?status=awaiting#billing"
-        />
-        <AttentionTile
-          tone="wait"
-          value={int(totals.retrying)}
-          label="Bill marking retrying"
-          note="Paid, but the biller has not confirmed"
-          href="?status=marking#billing"
-        />
-      </div>
-    </div>
+          <div class="attention">
+            <p class="seclabel">Needs attention</p>
+            {attention.length ? (
+              <div class="att-grid">
+                {attention.map((a) => (
+                  <AttentionTile tone={a.tone} value={int(a.value)} label={a.label} note={a.note} href={a.href} />
+                ))}
+              </div>
+            ) : (
+              <p class="all-clear">
+                <ToneIcon tone="ok" />
+                Nothing needs attention: every inquiry and payment came back SUCCESS.
+              </p>
+            )}
+          </div>
 
-    <HourlyChart />
+          <div class="pair">
+            <HourlyChart title="Payments per hour" note="Bill payments logged, by result" hours={d.hours} hourly={pay.hourly} okLabel="Paid" href="/payments/" />
+            <HourlyChart title="Inquiries per hour" note="Bill inquiries logged, by result" hours={d.hours} hourly={inq.hourly} okLabel="Bill returned" href="/inquiries/" />
+          </div>
 
-    <div class="pair">
-      <FunnelChart />
-      <TypeChart />
-    </div>
+          <div class="pair">
+            <FunnelChart
+              stages={[
+                { label: 'Inquiries', value: inq.sum.total },
+                { label: 'Bills returned', value: inq.sum.counts.returned },
+                { label: 'Payments sent', value: pay.sum.total },
+                { label: 'Paid', value: pay.sum.counts.returned },
+              ]}
+            />
+            <ProblemsChart days={{ inquiry: inq, payment: pay }} />
+          </div>
+        </>
+      )
+    }
   </section>
 
-  <BillsTable />
+  {d.latest.length > 0 && <LatestTable latest={d.latest} now={now} />}
 </App>
 
 <script>
   import '../scripts/charts';
-  import '../scripts/billing';
 </script>
 
 <style>
@@ -133,8 +238,57 @@ const attempted = hourly.settled.map((s, i) => s + hourly.refused[i] + hourly.aw
 
   .att-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 14px;
+  }
+
+  .all-clear {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--mut);
+    font-weight: 700;
+  }
+
+  .head-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .head-tools .pill {
+    padding: 6px 12px;
+    font-size: 0.74rem;
+  }
+
+  .stale {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin-bottom: 18px;
+    padding: 12px 16px;
+    border: 1px solid color-mix(in srgb, var(--wait) 50%, transparent);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--wait) 9%, transparent);
+    font-size: 0.86rem;
+  }
+
+  .stale > :global(.tone-icon) {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    color: var(--wait-ink);
+  }
+
+  .stale p {
+    flex: 1 1 320px;
+  }
+
+  .stale .mono {
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
   }
 
   .pair {
@@ -154,12 +308,6 @@ const attempted = hourly.settled.map((s, i) => s + hourly.refused[i] + hourly.aw
     }
 
     .pair {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-
-  @media (max-width: 760px) {
-    .att-grid {
       grid-template-columns: minmax(0, 1fr);
     }
   }

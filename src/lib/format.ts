@@ -74,3 +74,16 @@ export function ago(iso: string, now = new Date()): string {
 
 /** A reply time: "391 ms", "1.24 s". */
 export const duration = (ms: number) => (ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(2)} s`);
+
+/** The Pakistan calendar day of an ISO time, "2026-10-22", for grouping by day. */
+export const pktDay = (iso: string | Date) => pktDate.format(new Date(iso));
+
+const pktHourOf = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Karachi', hour: '2-digit', hourCycle: 'h23' });
+
+/** The Pakistan-time hour of an ISO time, 0–23. */
+export const pktHour = (iso: string | Date) => Number(pktHourOf.format(new Date(iso)));
+
+const pktFullDay = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Karachi', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+/** "Thursday 22 October 2026", by the Pakistan calendar. */
+export const pktLongDay = (iso: string | Date) => pktFullDay.format(new Date(iso)).replace(',', '');
