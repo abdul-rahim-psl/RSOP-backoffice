@@ -1,4 +1,4 @@
-<button class="toggle" type="button" aria-label="Light mode" aria-pressed="false" title="Toggle light mode" data-theme-toggle>
+<button class="toggle" type="button" aria-label="Dark theme" aria-pressed="false" title="Dark theme" data-theme-toggle>
   <svg class="moon" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M20.5 14.3A8.5 8.5 0 1 1 9.7 3.5a6.8 6.8 0 0 0 10.8 10.8Z" />
   </svg>
@@ -11,11 +11,11 @@
 </button>
 
 <script>
-  const KEY = 'rsop-theme';
+  const KEY = 'rsop-ui-theme';
   const root = document.documentElement;
   const button = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
 
-  const isLight = () => root.dataset.theme === 'light';
+  const isDark = () => root.dataset.theme === 'dark';
 
   // Storage can be unavailable (private browsing, blocked cookies); the pick then lasts for this page only.
   function save(theme: string) {
@@ -24,21 +24,21 @@
     } catch {}
   }
 
-  function apply(light: boolean) {
+  function apply(dark: boolean) {
     root.classList.add('theme-switching');
-    if (light) root.dataset.theme = 'light';
+    if (dark) root.dataset.theme = 'dark';
     else delete root.dataset.theme;
-    button?.setAttribute('aria-pressed', String(light));
+    button?.setAttribute('aria-pressed', String(dark));
     // Flush styles while transitions are off, so turning them back on animates nothing.
     getComputedStyle(root).color;
     setTimeout(() => root.classList.remove('theme-switching'));
   }
 
-  button?.setAttribute('aria-pressed', String(isLight()));
+  button?.setAttribute('aria-pressed', String(isDark()));
   button?.addEventListener('click', () => {
-    const light = !isLight();
-    apply(light);
-    save(light ? 'light' : 'dark');
+    const dark = !isDark();
+    apply(dark);
+    save(dark ? 'dark' : 'light');
   });
 </script>
 
@@ -49,14 +49,11 @@
     width: 36px;
     height: 36px;
     padding: 0;
-    border: 1px solid var(--stroke);
-    border-radius: 999px;
+    border: 0;
+    border-radius: 8px;
     background: transparent;
-    color: var(--mut);
+    color: var(--ink);
     cursor: pointer;
-    transition:
-      color 0.15s,
-      background 0.15s;
   }
 
   .toggle:hover {
@@ -74,11 +71,11 @@
   }
 
   .sun,
-  :global([data-theme='light']) .moon {
+  :global([data-theme='dark']) .moon {
     display: none;
   }
 
-  :global([data-theme='light']) .sun {
+  :global([data-theme='dark']) .sun {
     display: block;
   }
 </style>

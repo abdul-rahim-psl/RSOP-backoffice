@@ -4,8 +4,6 @@
 import Icon from '../Icon.astro';
 import ToneIcon from '../ToneIcon.astro';
 import StatusPill from '../StatusPill.astro';
-import StatTile from '../dashboard/StatTile.astro';
-import AttentionTile from '../dashboard/AttentionTile.astro';
 import EntryDetail from './EntryDetail.astro';
 import { fetchLog, logs, summarize, type LogEntry, type LogId } from '../../data/api/bill-log';
 import { ago, compactPkr, duration, int, pct, pkr, pkt, pktTime, pktWhen } from '../../lib/format';
@@ -44,6 +42,26 @@ const errorsNote = sum.errors
   .map(([desc, n]) => (n > 1 ? `${desc} (${n})` : desc))
   .join(' · ');
 
+const kpis =
+  sum.total === 0
+    ? []
+    : [
+        { label: `${kind.Many} logged`, value: int(sum.total), sub: `Since ${pktWhen(sum.oldest!, now)}` },
+        priced
+          ? {
+              label: 'Collected',
+              value: compactPkr(sum.collected),
+              sub: `${int(sum.counts.returned)} of ${int(sum.total)} ${many} ${kind.okKpi.toLowerCase()} · ${pct(sum.counts.returned, sum.total, 0)}`,
+            }
+          : { label: kind.okKpi, value: pct(sum.counts.returned, sum.total, 0), sub: `${int(sum.counts.returned)} of ${int(sum.total)} ${many}` },
+        {
+          label: 'Typical reply time',
+          value: sum.medianMs !== null ? duration(sum.medianMs) : '—',
+          sub: sum.slowestMs !== null ? `Median · slowest ${duration(sum.slowestMs)}` : 'No replies yet',
+        },
+        { label: `Last ${one}`, value: ago(sum.newest!, now), sub: pktWhen(sum.newest!, now) },
+      ];
+
 const searchText = (q: LogEntry) =>
   [q.billRef, q.billId, q.id, q.amount, q.correlationId, q.requestId, q.ip, q.code, q.desc, q.sender, q.senderUser, q.receiver, q.client]
     .filter(Boolean)
@@ -53,9 +71,9 @@ const searchText = (q: LogEntry) =>
 
 <div class="page-head">
   <div>
-    <p class="eyebrow">Back office · <span class="audience">Admin</span></p>
-    <h1 class="title">{kind.title}<span class="pd">.</span></h1>
-    <p>Every bill {one} the log has recorded, newest first, and what came back.</p>
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/dashboard/">Home</a><span class="sep" aria-hidden="true">/</span><span>Monitoring</span></nav>
+    <h1 class="title">{kind.title}</h1>
+    <p>Source: RSOP {one} log · newest first</p>
   </div>
   <div class="head-tools">
     <span class="pill" data-tone={pill.tone} title={pill.about}>
@@ -69,9 +87,7 @@ const searchText = (q: LogEntry) =>
 {
   sum.total === 0 ? (
     <section class="state glass" aria-labelledby="empty-h" data-tone="info">
-      <span class="state-icon">
-        <ToneIcon tone="info" />
-      </span>
+      <ToneIcon tone="info" ring />
       <div class="state-body">
         <h2 id="empty-h">No {many} logged yet</h2>
         <p class="muted">The log answered with an empty list at {pktTime(src.fetchedAt)} PKT. Refresh after the next bill {one}.</p>
@@ -82,193 +98,194 @@ const searchText = (q: LogEntry) =>
       <section aria-labelledby="sum-h">
         <h2 id="sum-h" class="sr-only">Summary</h2>
         <div class="kpis">
-          <StatTile label={`${kind.Many} logged`} value={int(sum.total)} sub={`Since ${pktWhen(sum.oldest!, now)}`} />
-          {priced ? (
-            <StatTile
-              label="Collected"
-              value={compactPkr(sum.collected)}
-              sub={`${int(sum.counts.returned)} of ${int(sum.total)} ${many} ${kind.okKpi.toLowerCase()} · ${pct(sum.counts.returned, sum.total, 0)}`}
-            />
-          ) : (
-            <StatTile
-              label={kind.okKpi}
-              value={pct(sum.counts.returned, sum.total, 0)}
-              sub={`${int(sum.counts.returned)} of ${int(sum.total)} ${many}`}
-            />
-          )}
-          <StatTile
-            label="Typical reply time"
-            value={sum.medianMs !== null ? duration(sum.medianMs) : '—'}
-            sub={sum.slowestMs !== null ? `Median · slowest ${duration(sum.slowestMs)}` : 'No replies yet'}
-          />
-          <StatTile label={`Last ${one}`} value={ago(sum.newest!, now)} sub={pktWhen(sum.newest!, now)} />
+          {kpis.map((k) => (
+            <div class="kpi glass">
+              <p class="kpi-label">{k.label}</p>
+              <p class="kpi-value">{k.value}</p>
+              <p class="kpi-sub">{k.sub}</p>
+            </div>
+          ))}
         </div>
 
-        <div class="attention">
-          <p class="seclabel">Needs attention</p>
+        <div class="attention" role="group" aria-label="Needs attention">
           {sum.counts.silent || sum.counts.error ? (
-            <div class="att-grid">
+            <>
               {sum.counts.silent > 0 && (
-                <AttentionTile
-                  tone="wait"
-                  value={int(sum.counts.silent)}
-                  label="No reply"
-                  note="Logged, but no reply was recorded"
-                  href="?show=silent#log"
-                />
+                <div class="strip" data-tone="wait">
+                  <ToneIcon tone="wait" ring />
+                  <p>
+                    <b>{int(sum.counts.silent)} no reply</b>
+                    <span class="strip-note">Logged, but no reply was recorded</span>
+                  </p>
+                  <a class="strip-link" href="?show=silent#log">
+                    Show in log
+                  </a>
+                </div>
               )}
               {sum.counts.error > 0 && (
-                <AttentionTile
-                  tone="fail"
-                  value={int(sum.counts.error)}
-                  label={sum.counts.error === 1 ? 'Error reply' : 'Error replies'}
-                  note={errorsNote}
-                  href="?show=error#log"
-                />
+                <div class="strip" data-tone="fail">
+                  <ToneIcon tone="fail" ring />
+                  <p>
+                    <b>
+                      {int(sum.counts.error)} {sum.counts.error === 1 ? 'error reply' : 'error replies'}
+                    </b>
+                    <span class="strip-note">{errorsNote}</span>
+                  </p>
+                  <a class="strip-link" href="?show=error#log">
+                    Show in log
+                  </a>
+                </div>
               )}
-            </div>
+            </>
           ) : (
-            <p class="all-clear">
-              <ToneIcon tone="ok" />
-              Nothing needs attention: every {one} came back SUCCESS.
-            </p>
+            <div class="strip" data-tone="ok">
+              <ToneIcon tone="ok" ring />
+              <p>Nothing needs attention: every {one} came back SUCCESS</p>
+            </div>
           )}
         </div>
       </section>
 
       <section class="log" id="log" aria-labelledby="log-h" data-log data-anchor={anchor} data-many={many} data-seen-key={`rsop-${many}-seen`}>
-        <div class="section-head">
-          <h2 id="log-h">Log<span class="pd">.</span></h2>
-          <p>
-            Newest first, in Pakistan time. Select {kind.aOne} for its IDs, participants and headers.
-            <span class="new-note" data-new-note hidden></span>
-          </p>
-        </div>
+        <div class="tcard glass">
+          <div class="tbar">
+            <div class="tbar-title">
+              <h2 id="log-h">
+                {kind.Many} <span class="tcount">({int(sum.total)})</span>
+              </h2>
+              <p class="tsub">
+                <span title={`Select ${kind.aOne} for its IDs, participants and headers`}>Newest first · Pakistan time (PKT)</span>
+                <span class="new-note" data-new-note hidden></span>
+              </p>
+            </div>
 
-        <div class="filters">
-          <label class="search">
-            <Icon name="search" size={16} />
-            <span class="sr-only">Search {many}</span>
-            <input
-              class="input"
-              type="search"
-              placeholder="Bill reference, ID, participant or IP"
-              autocomplete="off"
-              data-search
-            />
-          </label>
-          <div class="chips" role="group" aria-label={`Show ${many} by result`}>
-            <button class="chip" type="button" data-show="all" aria-pressed="true">
-              All <span class="count">{int(sum.total)}</span>
-            </button>
-            {outcomes.map((o) => (
-              <button class="chip" type="button" data-show={o.id} data-tone={o.tone} aria-pressed="false">
-                <ToneIcon tone={o.tone} />
-                {o.label}
-                <span class="count">{int(sum.counts[o.id])}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <details class="help">
-          <summary>
-            <Icon name="info" size={15} />
-            What the results mean
-          </summary>
-          <dl>
-            {outcomes.map((o) => (
-              <div>
-                <dt>
-                  <StatusPill tone={o.tone} word={o.label} />
-                </dt>
-                <dd>{o.means}</dd>
+            <div class="tbar-tools">
+              <label class="search">
+                <Icon name="search" size={16} />
+                <span class="sr-only">Search {many}</span>
+                <input class="input" type="search" placeholder="Bill reference, ID, participant or IP" autocomplete="off" data-search />
+              </label>
+              <div class="chips" role="group" aria-label={`Show ${many} by result`}>
+                <button class="chip" type="button" data-show="all" aria-pressed="true">
+                  All <span class="count">{int(sum.total)}</span>
+                </button>
+                {outcomes.map((o) => (
+                  <button class="chip" type="button" data-show={o.id} data-tone={o.tone} aria-pressed="false">
+                    <ToneIcon tone={o.tone} ring />
+                    {o.label}
+                    <span class="count">{int(sum.counts[o.id])}</span>
+                  </button>
+                ))}
               </div>
-            ))}
-          </dl>
-        </details>
+              <details class="legend">
+                <summary title="What each result means">
+                  <Icon name="info" size={16} />
+                  Legend
+                </summary>
+                <div class="legend-pop">
+                  <p class="legend-h">Results</p>
+                  <dl>
+                    {outcomes.map((o) => (
+                      <div>
+                        <dt>
+                          <StatusPill tone={o.tone} word={o.label} />
+                        </dt>
+                        <dd>{o.means}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </details>
+            </div>
+          </div>
 
-        <p class="sr-only" aria-live="polite" data-log-status></p>
+          <p class="sr-only" aria-live="polite" data-log-status></p>
 
-        <div class="table-wrap">
-          <table class="table log-table">
-            <caption class="sr-only">{kind.title}, newest first</caption>
-            <thead>
-              <tr>
-                <th scope="col">Time</th>
-                <th scope="col">Bill reference</th>
-                {priced && <th scope="col" class="num">Amount</th>}
-                <th scope="col">Result</th>
-                <th scope="col" class="num">Reply time</th>
-                {hasCaller && <th scope="col">Called from</th>}
-                <th scope="col">
-                  <span class="sr-only">Details</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((q) => (
-                <tr data-row data-id={q.id} data-at={q.at} data-show={q.outcome} data-text={searchText(q)}>
-                  <td class="when">
-                    <time datetime={q.at}>{pktWhen(q.at, now)}</time>
-                    <span class="sub">
-                      {ago(q.at, now)}
-                      <span class="new-tag" data-new hidden>
-                        New
-                      </span>
-                    </span>
-                  </td>
-                  <td class="ref mono">{q.billRef ?? <span class="none">none</span>}</td>
-                  {priced && <td class="num amount">{q.amount !== null ? pkr(q.amount) : <span class="none">—</span>}</td>}
-                  <td>
-                    <StatusPill
-                      tone={byId[q.outcome].tone}
-                      code={q.outcome === 'error' ? (q.code ?? undefined) : undefined}
-                      word={q.outcome === 'error' ? q.desc || byId.error.label : byId[q.outcome].label}
-                    />
-                  </td>
-                  <td class="num">{q.replyMs !== null ? duration(q.replyMs) : <span class="none">—</span>}</td>
-                  {hasCaller && (
-                    <td class="caller">
-                      <span class:list={{ mono: !q.local }}>{q.local ? 'Same server' : (q.ip ?? '—')}</span>
-                      {q.client && <span class="sub mono">{q.client}</span>}
-                    </td>
+          <div class="table-wrap">
+            <table class="table log-table">
+              <caption class="sr-only">{kind.title}, newest first</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Time (PKT)</th>
+                  <th scope="col">Bill reference</th>
+                  {priced && (
+                    <th scope="col" class="num">
+                      Amount
+                    </th>
                   )}
-                  <td class="go">
-                    <a href={`#${anchor}-${q.id}`} data-open aria-label={`Details of ${one} ${q.id}`}>
-                      Details
-                      <Icon name="arrow" size={13} />
-                    </a>
+                  <th scope="col">Result</th>
+                  <th scope="col" class="num">
+                    Reply time
+                  </th>
+                  {hasCaller && <th scope="col">Called from</th>}
+                  <th scope="col" class="go">
+                    <span class="sr-only">Details</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((q) => (
+                  <tr data-row data-id={q.id} data-at={q.at} data-show={q.outcome} data-text={searchText(q)}>
+                    <td class="when">
+                      <time datetime={q.at}>{pktWhen(q.at, now)}</time>
+                      <span class="sub">
+                        {ago(q.at, now)}
+                        <span class="new-tag pill" data-tone="info" data-new hidden>
+                          New
+                        </span>
+                      </span>
+                    </td>
+                    <td class="ref mono">{q.billRef ?? <span class="none">none</span>}</td>
+                    {priced && <td class="num amount">{q.amount !== null ? pkr(q.amount) : <span class="none">—</span>}</td>}
+                    <td class="result">
+                      <StatusPill
+                        tone={byId[q.outcome].tone}
+                        code={q.outcome === 'error' ? (q.code ?? undefined) : undefined}
+                        word={q.outcome === 'error' ? q.desc || byId.error.label : byId[q.outcome].label}
+                      />
+                    </td>
+                    <td class="num">{q.replyMs !== null ? duration(q.replyMs) : <span class="none">—</span>}</td>
+                    {hasCaller && (
+                      <td class="caller">
+                        <span class:list={{ mono: !q.local }}>{q.local ? 'Same server' : (q.ip ?? '—')}</span>
+                        {q.client && <span class="sub mono">{q.client}</span>}
+                      </td>
+                    )}
+                    <td class="go">
+                      <a href={`#${anchor}-${q.id}`} data-open aria-label={`Details of ${one} ${q.id}`} title="Details">
+                        <Icon name="next" size={16} />
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+                <tr class="empty" data-empty hidden>
+                  <td colspan={cols}>
+                    No {many} match.
+                    <button class="linkish" type="button" data-clear>
+                      Show all
+                    </button>
                   </td>
                 </tr>
-              ))}
-              <tr class="empty" data-empty hidden>
-                <td colspan={cols}>
-                  No {many} match.
-                  <button class="linkish" type="button" data-clear>
-                    Show all
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Ten rows a page, over whatever the chips and search let through; bill-log.ts fills and drives it. */}
-        <nav class="pager" aria-label={`${kind.Many} pages`} data-pager hidden>
-          <p class="pager-sum" aria-live="polite" data-pager-sum></p>
-          <div class="pager-btns">
-            <button class="chip pager-step" type="button" data-page-step="-1" aria-label="Previous page">
-              <Icon name="prev" size={14} />
-              Previous
-            </button>
-            <span class="pager-pages" data-pager-pages></span>
-            <button class="chip pager-step" type="button" data-page-step="1" aria-label="Next page">
-              Next
-              <Icon name="next" size={14} />
-            </button>
+              </tbody>
+            </table>
           </div>
-        </nav>
+
+          {/* Ten rows a page, over whatever the chips and search let through; bill-log.ts fills and drives it. */}
+          <nav class="pager" aria-label={`${kind.Many} pages`} data-pager hidden>
+            <p class="pager-sum" aria-live="polite" data-pager-sum></p>
+            <div class="pager-btns">
+              <button class="pbtn pager-step" type="button" data-page-step="-1" aria-label="Previous page">
+                <Icon name="prev" size={16} />
+                Previous
+              </button>
+              <span class="pager-pages" data-pager-pages></span>
+              <button class="pbtn pager-step" type="button" data-page-step="1" aria-label="Next page">
+                Next
+                <Icon name="next" size={16} />
+              </button>
+            </div>
+          </nav>
+        </div>
         {list.length > SHOWN && (
           <p class="chart-note">
             Showing the newest {int(SHOWN)} of {int(list.length)}; the figures above count all of them.
@@ -278,7 +295,7 @@ const searchText = (q: LogEntry) =>
 
       <section class="store" aria-labelledby="store-h" data-store>
         <div class="section-head">
-          <h2 id="store-h">{kind.One} details<span class="pd">.</span></h2>
+          <h2 id="store-h">{kind.One} details</h2>
         </div>
         <div class="store-list">
           {rows.map((q) => (
@@ -294,15 +311,15 @@ const searchText = (q: LogEntry) =>
           <div class="drawer-bar">
             <div class="steps" role="group" aria-label="Move through the log">
               <button class="dbtn" type="button" data-step="-1">
-                <Icon name="chevron" size={15} class="up" />
+                <Icon name="chevron" size={16} class="up" />
                 Newer
               </button>
               <button class="dbtn" type="button" data-step="1">
-                <Icon name="chevron" size={15} />
+                <Icon name="chevron" size={16} />
                 Older
               </button>
             </div>
-            <button class="dbtn sq" type="button" data-close aria-label="Close details">
+            <button class="dbtn sq" type="button" data-close aria-label="Close details" title="Close">
               <Icon name="x" size={16} />
             </button>
           </div>
@@ -315,210 +332,322 @@ const searchText = (q: LogEntry) =>
 }
 
 <style>
-  .audience {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--ink-2);
-  }
-
-  .audience::before {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-radius: 2px;
-    background: var(--c-violet);
-  }
-
   .head-tools {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
 
-  .head-tools .pill {
-    padding: 6px 12px;
-    font-size: 0.74rem;
-  }
-
+  /* Empty log: a plain card with a status icon, title and one line. */
   .state {
     display: flex;
     align-items: flex-start;
-    gap: 16px;
-    padding: 22px 24px;
+    gap: 12px;
+    padding: 20px 24px;
+    color: var(--info-ink);
   }
 
-  .state[data-tone='info'] {
-    --tone: var(--info);
-  }
-
-  .state-icon {
-    display: grid;
+  .state > :global(.tone-icon) {
     flex: 0 0 auto;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--tone) 16%, transparent);
-    color: var(--tone);
-  }
-
-  .state-icon :global(.tone-icon) {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
   }
 
   .state-body {
     display: grid;
-    justify-items: start;
-    gap: 8px;
+    gap: 4px;
     min-width: 0;
+    color: var(--ink);
   }
 
   .state-body h2 {
-    font-family: var(--font-serif);
-    font-size: 1.6rem;
-    font-weight: 500;
-    line-height: 1.1;
+    color: var(--ink-2);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.5rem;
   }
 
-  .state-body .mono {
-    font-size: 0.82rem;
-    overflow-wrap: anywhere;
-  }
-
-  .state-body .btn {
-    margin-top: 6px;
-  }
-
+  /* KPI tiles: muted label, large figure, short subtitle. */
   .kpis {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
   }
 
+  .kpi {
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    min-width: 0;
+    padding: 16px 20px;
+  }
+
+  .kpi-label {
+    color: var(--mut);
+    font-size: 0.875rem;
+  }
+
+  .kpi-value {
+    margin-top: 4px;
+    color: var(--ink-2);
+    font-size: 2rem;
+    font-weight: 400;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .kpi-sub {
+    color: var(--mut);
+    font-size: 0.75rem;
+  }
+
+  /* Message strips: tinted bar, semantic icon, text, one link. */
   .attention {
     display: grid;
-    gap: 10px;
-    margin: 22px 0 0;
+    gap: 8px;
+    margin-top: 16px;
   }
 
-  .att-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  .all-clear {
+  .strip {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 16px;
-    border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent);
-    border-radius: var(--radius);
-    background: color-mix(in srgb, var(--ok) 8%, transparent);
+    min-height: 40px;
+    padding: 8px 16px;
+    border: 1px solid var(--tone-line);
+    border-radius: var(--radius-sm);
+    background: var(--tone-bg);
+    color: var(--ink);
+  }
+
+  .strip[data-tone='ok'] {
+    --tone-bg: var(--ok-bg);
+    --tone-ink: var(--ok-ink);
+    --tone-line: color-mix(in srgb, var(--ok) 45%, transparent);
+  }
+
+  .strip[data-tone='fail'] {
+    --tone-bg: var(--fail-bg);
+    --tone-ink: var(--fail-ink);
+    --tone-line: color-mix(in srgb, var(--fail) 45%, transparent);
+  }
+
+  .strip[data-tone='wait'] {
+    --tone-bg: var(--wait-bg);
+    --tone-ink: var(--wait-ink);
+    --tone-line: color-mix(in srgb, var(--wait) 45%, transparent);
+  }
+
+  .strip > :global(.tone-icon) {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    color: var(--tone-ink);
+  }
+
+  .strip p {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    min-width: 0;
+  }
+
+  .strip b {
     font-weight: 700;
   }
 
-  .all-clear :global(.tone-icon) {
-    width: 18px;
-    height: 18px;
-    color: var(--ok-ink);
+  .strip-note {
+    color: var(--ink-2);
   }
 
-  .new-note {
-    color: var(--select);
-    font-weight: 800;
+  .strip-link {
+    flex: 0 0 auto;
+    margin-left: auto;
+    color: var(--link);
+    text-decoration: none;
+    white-space: nowrap;
   }
 
-  .filters {
+  .strip-link:hover {
+    text-decoration: underline;
+  }
+
+  /* The log: one card with a toolbar over a responsive table. */
+  .log {
+    margin-top: 24px;
+    scroll-margin-top: calc(var(--header-h) + 12px);
+  }
+
+  .tbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
+    gap: 12px 24px;
+    padding: 16px 16px 12px;
+  }
+
+  .tbar-title {
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+
+  .tbar-title h2 {
+    color: var(--ink-2);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.5rem;
+  }
+
+  .tcount {
+    font-weight: 400;
+  }
+
+  .tsub {
+    color: var(--mut);
+    font-size: 0.875rem;
+  }
+
+  .new-note {
+    margin-left: 6px;
+    color: var(--info-ink);
+    font-weight: 600;
+  }
+
+  .new-note::before {
+    content: '· ';
+    color: var(--mut);
+    font-weight: 400;
+  }
+
+  .tbar-tools {
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px 12px;
   }
 
   .search {
     position: relative;
-    flex: 0 1 360px;
+    flex: 0 1 auto;
+    width: 280px;
+    min-width: 200px;
   }
 
   .search :global(.icon) {
     position: absolute;
     top: 50%;
-    left: 13px;
-    color: var(--faint);
+    left: 10px;
+    color: var(--mut);
     transform: translateY(-50%);
+    pointer-events: none;
   }
 
   .search .input {
-    padding-left: 38px;
-    border-radius: 999px;
+    padding-left: 34px;
+    border-radius: var(--radius-field);
   }
 
   .chip[data-tone='ok'] {
-    --tone: var(--ok);
+    --tone-ink: var(--ok-ink);
   }
 
   .chip[data-tone='fail'] {
-    --tone: var(--fail);
+    --tone-ink: var(--fail-ink);
   }
 
   .chip[data-tone='wait'] {
-    --tone: var(--wait);
+    --tone-ink: var(--wait-ink);
   }
 
   .chip :global(.tone-icon) {
-    width: 14px;
-    height: 14px;
-    color: var(--tone);
+    width: 16px;
+    height: 16px;
+    color: var(--tone-ink);
   }
 
-  .help {
-    margin-bottom: 14px;
-    font-size: 0.82rem;
+  /* Legend: a transparent toolbar button that opens a popover. */
+  .legend {
+    position: relative;
   }
 
-  .help summary {
+  .legend summary {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--mut);
-    font-weight: 800;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--link);
+    font-weight: 600;
     cursor: pointer;
     list-style: none;
   }
 
-  .help summary::-webkit-details-marker {
+  .legend summary::-webkit-details-marker {
     display: none;
   }
 
-  .help dl {
-    display: grid;
-    gap: 8px;
-    margin-top: 10px;
-    padding: 12px 14px;
-    border: 1px solid var(--stroke);
-    border-radius: var(--radius-sm);
-    background: var(--raised);
+  .legend summary:hover,
+  .legend[open] summary {
+    background: var(--hover);
   }
 
-  .help dl > div {
+  .legend-pop {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 20;
+    width: min(440px, calc(100vw - 32px));
+    padding: 12px 16px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--panel-solid);
+    box-shadow: var(--shadow);
+  }
+
+  .legend-h {
+    margin-bottom: 8px;
+    color: var(--ink-2);
+    font-weight: 700;
+  }
+
+  .legend dl {
     display: grid;
-    grid-template-columns: 150px minmax(0, 1fr);
-    align-items: center;
+    gap: 8px;
+  }
+
+  .legend dl > div {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr);
+    align-items: start;
     gap: 12px;
   }
 
-  .help dd {
+  .legend dd {
     color: var(--ink-2);
+    font-size: 0.875rem;
+  }
+
+  /* The table sits flush inside the card, so the shared table card styling is turned off here. */
+  .tcard .table-wrap {
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .log-table {
     min-width: 860px;
+  }
+
+  .log-table thead th {
+    border-top: 1px solid var(--stroke);
   }
 
   .log-table tbody tr[data-row] {
@@ -526,7 +655,11 @@ const searchText = (q: LogEntry) =>
   }
 
   .log-table tbody tr[data-current] td {
-    background: color-mix(in srgb, var(--select) 10%, transparent);
+    background: var(--selected);
+  }
+
+  .log-table tbody tr[data-current] td:first-child {
+    box-shadow: inset 3px 0 0 var(--link);
   }
 
   .log-table td.num,
@@ -536,7 +669,7 @@ const searchText = (q: LogEntry) =>
 
   .when time {
     display: block;
-    font-weight: 700;
+    color: var(--ink);
     white-space: nowrap;
   }
 
@@ -545,21 +678,11 @@ const searchText = (q: LogEntry) =>
     align-items: center;
     gap: 6px;
     color: var(--mut);
-    font-size: 0.74rem;
-  }
-
-  .sub.mono {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   .new-tag {
-    padding: 0 6px;
-    border-radius: 999px;
-    background: var(--select);
-    color: var(--bg);
-    font-size: 0.64rem;
-    font-weight: 900;
-    letter-spacing: 0.04em;
+    line-height: 1.2;
   }
 
   .new-tag[hidden] {
@@ -567,16 +690,20 @@ const searchText = (q: LogEntry) =>
   }
 
   .ref {
-    font-size: 0.82rem;
+    font-size: 0.8125rem;
   }
 
   .none {
-    color: var(--faint);
+    color: var(--mut);
   }
 
   .amount {
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+  }
+
+  .result {
+    max-width: 320px;
   }
 
   .caller {
@@ -585,34 +712,33 @@ const searchText = (q: LogEntry) =>
 
   .caller > span:first-child {
     display: block;
-    font-weight: 700;
   }
 
   .caller > .mono:first-child {
-    font-size: 0.8rem;
+    font-size: 0.8125rem;
   }
 
   .go {
+    width: 48px;
     text-align: right;
-    white-space: nowrap;
   }
 
   .go a {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--select);
-    font-size: 0.8rem;
-    font-weight: 800;
-    text-decoration: none;
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    color: var(--mut);
   }
 
   .go a:hover {
-    text-decoration: underline;
+    color: var(--link);
+    background: var(--hover);
   }
 
   .empty td {
-    padding: 22px 14px;
+    padding: 24px 16px;
     color: var(--mut);
     text-align: center;
   }
@@ -622,9 +748,13 @@ const searchText = (q: LogEntry) =>
     padding: 0;
     border: 0;
     background: none;
-    color: var(--select);
-    font-weight: 800;
+    color: var(--link);
+    font-weight: 600;
     cursor: pointer;
+  }
+
+  .linkish:hover {
+    text-decoration: underline;
   }
 
   .pager {
@@ -632,8 +762,9 @@ const searchText = (q: LogEntry) =>
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 10px 16px;
-    margin-top: 14px;
+    gap: 8px 16px;
+    padding: 8px 16px;
+    border-top: 1px solid var(--stroke);
   }
 
   .pager[hidden] {
@@ -642,8 +773,7 @@ const searchText = (q: LogEntry) =>
 
   .pager-sum {
     color: var(--mut);
-    font-size: 0.82rem;
-    font-weight: 700;
+    font-size: 0.875rem;
   }
 
   .pager-btns,
@@ -651,46 +781,63 @@ const searchText = (q: LogEntry) =>
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
-  .pager-pages :global(.chip) {
-    min-width: 34px;
+  /* Pager buttons are transparent; the current page takes the selected state. */
+  .pbtn,
+  .pager-pages :global(.pbtn) {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    padding: 4px 10px;
+    gap: 4px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--link);
+    font-size: 0.875rem;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
+    cursor: pointer;
   }
 
-  .pager-pages :global(.chip[aria-current='page']) {
-    color: var(--ink);
-    border-color: var(--stroke-strong);
-    background: var(--raised);
+  .pbtn:hover:not(:disabled),
+  .pager-pages :global(.pbtn:hover) {
+    background: var(--hover);
+  }
+
+  .pager-pages :global(.pbtn[aria-current='page']) {
+    border-color: var(--link);
+    background: var(--selected);
   }
 
   .pager-pages :global(.gap) {
-    color: var(--faint);
     padding: 0 2px;
+    color: var(--mut);
   }
 
-  .pager-step:disabled {
+  .pbtn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
   }
 
   .chart-note {
-    margin-top: 10px;
-    color: var(--faint);
-    font-size: 0.78rem;
+    margin-top: 8px;
+    color: var(--mut);
+    font-size: 0.75rem;
   }
 
   /* Without the script, every entry's details are listed here and each row's Details link jumps to its card. */
   .store-list {
     display: grid;
-    gap: 14px;
+    gap: 16px;
   }
 
   .store-card {
-    padding: 20px 22px;
+    padding: 20px 24px;
     scroll-margin-top: calc(var(--header-h) + 12px);
   }
 
@@ -698,30 +845,28 @@ const searchText = (q: LogEntry) =>
     display: none;
   }
 
+  /* Details open in a side panel on the right. */
   .drawer {
     position: fixed;
     inset: 0 0 0 auto;
-    width: min(560px, 100vw);
+    width: min(600px, 100vw);
     max-width: 100vw;
     height: 100dvh;
     max-height: 100dvh;
     margin: 0;
     padding: 0;
     border: 0;
-    border-left: 1px solid var(--stroke-strong);
     background: var(--panel-solid);
     color: var(--ink);
     box-shadow: var(--shadow);
   }
 
   .drawer[open] {
-    animation: slide-in 0.18s ease-out;
+    animation: slide-in 0.16s ease-out;
   }
 
   .drawer::backdrop {
-    background: rgba(5, 7, 12, 0.55);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.4);
   }
 
   @keyframes slide-in {
@@ -743,32 +888,32 @@ const searchText = (q: LogEntry) =>
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--stroke);
+    min-height: 52px;
+    padding: 8px 12px 8px 16px;
+    box-shadow: inset 0 -1px 0 var(--stroke);
   }
 
   .steps {
     display: flex;
-    gap: 6px;
+    gap: 4px;
   }
 
   .dbtn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-height: 34px;
-    padding: 5px 12px;
-    border: 1px solid var(--stroke);
-    border-radius: 999px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--ink-2);
-    font-size: 0.8rem;
-    font-weight: 800;
+    color: var(--link);
+    font-size: 0.875rem;
+    font-weight: 600;
     cursor: pointer;
   }
 
   .dbtn:hover:not([disabled]) {
-    color: var(--ink);
     background: var(--hover);
   }
 
@@ -779,8 +924,9 @@ const searchText = (q: LogEntry) =>
 
   .dbtn.sq {
     justify-content: center;
-    width: 34px;
+    width: 36px;
     padding: 0;
+    color: var(--ink-2);
   }
 
   .dbtn :global(.up) {
@@ -790,7 +936,15 @@ const searchText = (q: LogEntry) =>
   .drawer-body {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 22px 32px;
+    padding: 20px 24px 32px;
+  }
+
+  @media (max-width: 1180px) {
+    .tbar-tools {
+      width: 100%;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
   }
 
   @media (max-width: 1080px) {
@@ -800,13 +954,18 @@ const searchText = (q: LogEntry) =>
   }
 
   @media (max-width: 760px) {
-    .att-grid {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .help dl > div {
+    .legend dl > div {
       grid-template-columns: minmax(0, 1fr);
       gap: 4px;
+    }
+
+    .legend-pop {
+      right: auto;
+      left: 0;
+    }
+
+    .strip {
+      flex-wrap: wrap;
     }
   }
 
@@ -820,7 +979,7 @@ const searchText = (q: LogEntry) =>
     }
 
     .drawer-body {
-      padding: 18px 16px 28px;
+      padding: 16px 16px 28px;
     }
   }
 </style>

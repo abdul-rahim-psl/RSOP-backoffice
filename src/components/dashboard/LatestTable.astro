@@ -15,8 +15,8 @@ const page: Record<LogId, string> = { inquiry: '/inquiries/', payment: '/payment
 
 <section class="latest" aria-labelledby="latest-h">
   <div class="section-head">
-    <h2 id="latest-h">Latest activity<span class="pd">.</span></h2>
-    <p>The newest inquiries and payments today, from both logs. Each opens in its log.</p>
+    <h2 id="latest-h">Latest activity</h2>
+    <p>Source: inquiry and payment logs · today, newest first</p>
   </div>
 
   <div class="table-wrap">
@@ -56,7 +56,7 @@ const page: Record<LogId, string> = { inquiry: '/inquiries/', payment: '/payment
                 <td class="go">
                   <a href={`${page[log]}#${kind.anchor}-${q.id}`} aria-label={`Details of ${kind.one} ${q.id}`}>
                     Details
-                    <Icon name="arrow" size={13} />
+                    <Icon name="chevron" size={14} class="go-icon" />
                   </a>
                 </td>
               </tr>
@@ -70,19 +70,19 @@ const page: Record<LogId, string> = { inquiry: '/inquiries/', payment: '/payment
 
 <style>
   .latest {
-    margin-top: 34px;
+    margin-top: 32px;
   }
 
   .when time {
     display: block;
-    font-weight: 800;
+    color: var(--ink);
     white-space: nowrap;
   }
 
   .sub {
     display: block;
     color: var(--mut);
-    font-size: 0.74rem;
+    font-size: 0.75rem;
   }
 
   td.mono,
@@ -91,7 +91,7 @@ const page: Record<LogId, string> = { inquiry: '/inquiries/', payment: '/payment
   }
 
   .none {
-    color: var(--faint);
+    color: var(--mut);
   }
 
   .go {
@@ -102,14 +102,16 @@ const page: Record<LogId, string> = { inquiry: '/inquiries/', payment: '/payment
   .go a {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    color: var(--select);
-    font-size: 0.82rem;
-    font-weight: 800;
+    gap: 2px;
+    color: var(--link);
     text-decoration: none;
   }
 
   .go a:hover {
     text-decoration: underline;
+  }
+
+  .go :global(.go-icon) {
+    transform: rotate(-90deg);
   }
 </style>

@@ -76,13 +76,25 @@ const headerSets: { title: string; list: Header[] }[] = bare
     <h3 id={`${kind.anchor}-${q.id}-h`}>
       {q.billRef ? <>Bill <span class="mono">{q.billRef}</span></> : 'No bill reference'}
     </h3>
-    {q.amount !== null && <p class="amount">{pkr(q.amount)}</p>}
-    <StatusPill tone={o.tone} code={q.outcome === 'error' ? (q.code ?? undefined) : undefined} word={word} />
+    <dl class="head-attrs">
+      {
+        q.amount !== null && (
+          <div>
+            <dt>Amount</dt>
+            <dd class="amount">{pkr(q.amount)}</dd>
+          </div>
+        )
+      }
+      <div>
+        <dt>Result</dt>
+        <dd><StatusPill tone={o.tone} code={q.outcome === 'error' ? (q.code ?? undefined) : undefined} word={word} /></dd>
+      </div>
+    </dl>
     <p class="story">{story}</p>
   </header>
 
   <section class="block">
-    <h4 class="seclabel">When</h4>
+    <h4>When</h4>
     <dl class="facts">
       <div>
         <dt>{kind.asked}</dt>
@@ -100,7 +112,7 @@ const headerSets: { title: string; list: Header[] }[] = bare
   </section>
 
   <section class="block">
-    <h4 class="seclabel">{kind.whoAsked}</h4>
+    <h4>{kind.whoAsked}</h4>
     <dl class="facts">
       {
         who.map((w) => (
@@ -117,7 +129,7 @@ const headerSets: { title: string; list: Header[] }[] = bare
   </section>
 
   <section class="block">
-    <h4 class="seclabel">IDs for tracing</h4>
+    <h4>IDs for tracing</h4>
     <dl class="facts">
       {
         ids.map((id) => (
@@ -127,8 +139,8 @@ const headerSets: { title: string; list: Header[] }[] = bare
               {id.value ? (
                 <span class="id">
                   <span class="mono">{id.value}</span>
-                  <button class="copy" type="button" data-copy={id.value} data-copy-label={id.label} aria-label={`Copy ${id.label}`}>
-                    <Icon name="copy" size={14} />
+                  <button class="copy" type="button" data-copy={id.value} data-copy-label={id.label} aria-label={`Copy ${id.label}`} title="Copy">
+                    <Icon name="copy" size={16} />
                   </button>
                 </span>
               ) : (
@@ -140,16 +152,16 @@ const headerSets: { title: string; list: Header[] }[] = bare
         ))
       }
     </dl>
-    {unsetText && <p class="unset">Not recorded for this {kind.one}: {unsetText}.</p>}
+    {unsetText && <p class="unset">Not recorded for this {kind.one}: {unsetText}</p>}
   </section>
 
   {
     headerSets.map((h) => (
       <details class="hdrs">
         <summary>
-          <Icon name="chevron" size={15} />
+          <Icon name="chevron" size={16} />
           {h.title}
-          <span class="count">{h.list.length}</span>
+          <span class="count">({h.list.length})</span>
         </summary>
         {h.list.length ? (
           <table class="hdr-table">
@@ -164,7 +176,7 @@ const headerSets: { title: string; list: Header[] }[] = bare
             </tbody>
           </table>
         ) : (
-          <p class="unset">None recorded.</p>
+          <p class="unset">None recorded</p>
         )}
       </details>
     ))
@@ -174,115 +186,142 @@ const headerSets: { title: string; list: Header[] }[] = bare
 <style>
   .entry {
     display: grid;
-    gap: 20px;
   }
 
-  .amount {
-    font-size: 1.05rem;
-    font-weight: 900;
-    font-variant-numeric: tabular-nums;
-  }
-
+  /* Object header: identifier, title, key attributes, then the one-line summary. */
   .entry-head {
     display: grid;
-    justify-items: start;
     gap: 8px;
+    padding-bottom: 16px;
+  }
+
+  .eyebrow {
+    margin: 0;
   }
 
   h3 {
-    font-family: var(--font-serif);
-    font-size: 1.7rem;
-    font-weight: 500;
-    line-height: 1.1;
+    color: var(--ink-2);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
   }
 
   h3 .mono {
-    font-size: 0.8em;
+    font-weight: 700;
+  }
+
+  .head-attrs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 40px;
+    margin-top: 4px;
+  }
+
+  .head-attrs > div {
+    display: grid;
+    gap: 2px;
+  }
+
+  .head-attrs dd {
+    font-size: 0.875rem;
+  }
+
+  .head-attrs dd.amount {
+    color: var(--ink-2);
+    font-size: 1.25rem;
+    line-height: 1.25rem;
+    font-variant-numeric: tabular-nums;
   }
 
   .story {
     color: var(--ink-2);
-    font-size: 0.9rem;
+    font-size: 0.875rem;
   }
 
+  /* Sections: a bold title over a label-value form. */
   .block {
     display: grid;
     gap: 8px;
+    padding: 16px 0;
+    border-top: 1px solid var(--stroke);
+  }
+
+  h4 {
+    color: var(--ink-2);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.5rem;
   }
 
   .facts {
     display: grid;
-    border: 1px solid var(--stroke);
-    border-radius: var(--radius-sm);
-    background: var(--raised);
+    gap: 2px;
   }
 
   .facts > div {
     display: grid;
-    grid-template-columns: minmax(120px, 34%) minmax(0, 1fr);
-    gap: 12px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--stroke);
-  }
-
-  .facts > div:last-child {
-    border-bottom: 0;
+    grid-template-columns: minmax(130px, 38%) minmax(0, 1fr);
+    align-items: baseline;
+    gap: 16px;
+    min-height: 32px;
+    padding: 5px 0;
   }
 
   dt {
     color: var(--mut);
-    font-size: 0.8rem;
-    font-weight: 800;
+    font-size: 0.875rem;
   }
 
   dd {
     min-width: 0;
-    font-size: 0.86rem;
+    color: var(--ink);
+    font-size: 0.875rem;
     overflow-wrap: anywhere;
   }
 
   dd .mono {
-    font-size: 0.8rem;
+    font-size: 0.8125rem;
   }
 
   .sub {
     display: block;
     color: var(--mut);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
   }
 
   .none {
-    color: var(--faint);
+    color: var(--mut);
   }
 
   .id {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
 
+  /* Icon-only buttons are transparent. */
   .copy {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
     width: 26px;
     height: 26px;
+    margin: -4px 0;
     padding: 0;
-    border: 1px solid var(--stroke);
-    border-radius: 8px;
+    border: 0;
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--mut);
+    color: var(--link);
     cursor: pointer;
   }
 
   .copy:hover {
-    color: var(--ink);
     background: var(--hover);
   }
 
   .copy[data-done] {
     color: var(--ok-ink);
-    border-color: color-mix(in srgb, var(--ok) 55%, transparent);
   }
 
   /* Copying needs the script; without it the ID is still there to select. */
@@ -292,29 +331,29 @@ const headerSets: { title: string; list: Header[] }[] = bare
 
   .warn {
     display: block;
-    margin-top: 4px;
+    margin-top: 2px;
     color: var(--wait-ink);
-    font-size: 0.76rem;
-    font-weight: 700;
+    font-size: 0.75rem;
   }
 
   .unset {
-    color: var(--faint);
-    font-size: 0.78rem;
+    color: var(--mut);
+    font-size: 0.75rem;
   }
 
+  /* Headers: collapsible panels with a key-value table. */
   .hdrs {
-    border: 1px solid var(--stroke);
-    border-radius: var(--radius-sm);
+    border-top: 1px solid var(--stroke);
   }
 
   .hdrs summary {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 12px;
-    font-size: 0.84rem;
-    font-weight: 800;
+    min-height: 44px;
+    color: var(--ink-2);
+    font-size: 0.875rem;
+    font-weight: 700;
     cursor: pointer;
     list-style: none;
   }
@@ -334,40 +373,39 @@ const headerSets: { title: string; list: Header[] }[] = bare
   }
 
   .count {
-    color: var(--faint);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
+    color: var(--mut);
+    font-weight: 400;
   }
 
   .hdrs > .unset {
-    padding: 0 12px 10px;
+    padding: 0 0 12px 24px;
   }
 
   .hdr-table {
     width: 100%;
+    margin-bottom: 12px;
     border-collapse: collapse;
-    border-top: 1px solid var(--stroke);
-    font-size: 0.74rem;
+    font-size: 0.75rem;
   }
 
   .hdr-table th,
   .hdr-table td {
-    padding: 6px 12px;
+    padding: 6px 8px;
     border-bottom: 1px solid var(--stroke);
     text-align: left;
     vertical-align: top;
     overflow-wrap: anywhere;
   }
 
-  .hdr-table tr:last-child th,
-  .hdr-table tr:last-child td {
-    border-bottom: 0;
+  .hdr-table tr:first-child th,
+  .hdr-table tr:first-child td {
+    border-top: 1px solid var(--stroke);
   }
 
   .hdr-table th {
     width: 40%;
     color: var(--mut);
-    font-weight: 600;
+    font-weight: 400;
   }
 
   @media (max-width: 480px) {

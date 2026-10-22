@@ -1,7 +1,6 @@
 ---
 import App from '../layouts/App.astro';
 import Icon from '../components/Icon.astro';
-import StatusPill from '../components/StatusPill.astro';
 import { initials, me, permissions, roles, users, type Role, type UserStatus } from '../data/users';
 import type { Tone } from '../lib/flow';
 
@@ -13,9 +12,9 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
 <App title="Users" description="Who can sign in to the RSOP back office, and what each role may do.">
   <div class="page-head">
     <div>
-      <p class="eyebrow">Back office</p>
-      <h1 class="title">Users<span class="pd">.</span></h1>
-      <p>Who can sign in to the back office, and what each role may do.</p>
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/dashboard/">Home</a><span class="sep" aria-hidden="true">/</span><span>User Management</span></nav>
+      <h1 class="title">User Management</h1>
+      <p>Back-office accounts and role permissions</p>
     </div>
     <button class="btn primary" type="button" data-invite>
       <Icon name="plus" size={16} />
@@ -23,26 +22,29 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
     </button>
   </div>
 
-  <div class="filters" data-users>
-    <label class="search">
-      <Icon name="search" size={16} />
-      <span class="sr-only">Search users</span>
-      <input class="input" type="search" placeholder="Search name or email" autocomplete="off" data-search />
-    </label>
-    <div class="chips" role="group" aria-label="Show users by role">
-      <button class="chip" type="button" data-role="all" aria-pressed="true">All <span class="count">{users.length}</span></button>
-      {
-        roleList.map((r) => (
-          <button class="chip" type="button" data-role={r} aria-pressed="false">
-            {r} <span class="count">{count(r)}</span>
-          </button>
-        ))
-      }
+  <div class="table-wrap list">
+    <div class="toolbar">
+      <h2 class="tb-title">Users <span class="tb-count">({users.length})</span></h2>
+      <div class="filters" data-users>
+        <div class="chips" role="group" aria-label="Show users by role">
+          <button class="chip" type="button" data-role="all" aria-pressed="true">All <span class="count">{users.length}</span></button>
+          {
+            roleList.map((r) => (
+              <button class="chip" type="button" data-role={r} aria-pressed="false">
+                {r} <span class="count">{count(r)}</span>
+              </button>
+            ))
+          }
+        </div>
+        <label class="search">
+          <span class="sr-only">Search users</span>
+          <input class="input" type="search" placeholder="Search name or email" autocomplete="off" data-search />
+          <Icon name="search" size={16} />
+        </label>
+      </div>
     </div>
-  </div>
-  <p class="sr-only" aria-live="polite" data-user-status></p>
+    <p class="sr-only" aria-live="polite" data-user-status></p>
 
-  <div class="table-wrap">
     <table class="table people">
       <caption class="sr-only">Back-office users</caption>
       <thead>
@@ -66,19 +68,29 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
                   <span>
                     <span class="name">
                       {u.name}
-                      {u.id === me.id && <span class="you">you</span>}
+                      {u.id === me.id && <span class="pill">You</span>}
                     </span>
                     <span class="mail">{u.email}</span>
                   </span>
                 </span>
               </td>
+              <td>{u.role}</td>
               <td>
-                <span class="role" data-role={u.role}>
-                  {u.role}
+                <span class="ostatus" data-tone={statusTone[u.status]}>
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <circle cx="8" cy="8" r="7" fill="currentColor" />
+                    {statusTone[u.status] === 'ok' && (
+                      <path d="m4.8 8.2 2.2 2.1 4.2-4.4" fill="none" stroke="var(--panel)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                    )}
+                    {statusTone[u.status] === 'wait' && (
+                      <path d="M8 4.5v4.2M8 11.2v.1" fill="none" stroke="var(--panel)" stroke-width="1.7" stroke-linecap="round" />
+                    )}
+                    {statusTone[u.status] === 'fail' && (
+                      <path d="m5.6 5.6 4.8 4.8m0-4.8-4.8 4.8" fill="none" stroke="var(--panel)" stroke-width="1.6" stroke-linecap="round" />
+                    )}
+                  </svg>
+                  {u.status}
                 </span>
-              </td>
-              <td>
-                <StatusPill tone={statusTone[u.status]} word={u.status} />
               </td>
               <td class="muted">{u.lastActive}</td>
               <td class="actions">
@@ -98,7 +110,7 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
           ))
         }
         <tr class="empty" data-empty hidden>
-          <td colspan="5">No users match.</td>
+          <td colspan="5">No users match</td>
         </tr>
       </tbody>
     </table>
@@ -106,83 +118,106 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
 
   <section aria-labelledby="roles-h">
     <div class="section-head">
-      <h2 id="roles-h">Roles and permissions<span class="pd">.</span></h2>
-      <p>Four roles, eight permissions.</p>
+      <h2 id="roles-h">Roles and permissions</h2>
+      <p>{roles.length} roles · {permissions.length} permissions</p>
     </div>
 
-    <ul class="role-cards">
-      {
-        roles.map((r) => (
-          <li class="glass">
-            <span class="role" data-role={r.role}>
-              {r.role}
-            </span>
-            <p>{r.summary}</p>
-          </li>
-        ))
-      }
-    </ul>
+    <div class="rp">
+      <div class="table-wrap">
+        <div class="toolbar">
+          <h3 class="tb-title">Roles <span class="tb-count">({roles.length})</span></h3>
+        </div>
+        <table class="table roles">
+          <caption class="sr-only">Roles</caption>
+          <thead>
+            <tr>
+              <th scope="col">Role</th>
+              <th scope="col">Scope</th>
+              <th scope="col" class="num">Users</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              roles.map((r) => (
+                <tr>
+                  <th scope="row">{r.role}</th>
+                  <td class="muted">{r.summary}</td>
+                  <td class="num">{count(r.role)}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
 
-    <div class="table-wrap">
-      <table class="table matrix">
-        <caption class="sr-only">What each role may do</caption>
-        <thead>
-          <tr>
-            <th scope="col">Permission</th>
-            {roleList.map((r) => <th scope="col" class="c">{r}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {
-            permissions.map((p) => (
-              <tr>
-                <th scope="row">{p.label}</th>
-                {roleList.map((r) =>
-                  p.roles.includes(r) ? (
-                    <td class="c yes">
-                      <Icon name="check" size={16} />
-                      <span class="sr-only">Allowed</span>
-                    </td>
-                  ) : (
-                    <td class="c no">
-                      <span aria-hidden="true">—</span>
-                      <span class="sr-only">Not allowed</span>
-                    </td>
-                  ),
-                )}
-              </tr>
-            ))
-          }
-        </tbody>
-      </table>
+      <div class="table-wrap">
+        <div class="toolbar">
+          <h3 class="tb-title">Permissions <span class="tb-count">({permissions.length})</span></h3>
+        </div>
+        <table class="table matrix">
+          <caption class="sr-only">What each role may do</caption>
+          <thead>
+            <tr>
+              <th scope="col">Permission</th>
+              {roleList.map((r) => <th scope="col" class="c">{r}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {
+              permissions.map((p) => (
+                <tr>
+                  <th scope="row">{p.label}</th>
+                  {roleList.map((r) =>
+                    p.roles.includes(r) ? (
+                      <td class="c yes">
+                        <Icon name="check" size={16} />
+                        <span class="sr-only">Allowed</span>
+                      </td>
+                    ) : (
+                      <td class="c no">
+                        <span aria-hidden="true">–</span>
+                        <span class="sr-only">Not allowed</span>
+                      </td>
+                    ),
+                  )}
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
-  <dialog class="dlg glass" aria-labelledby="dlg-h" data-dialog>
+  <dialog class="dlg" aria-labelledby="dlg-h" data-dialog>
     <form method="dialog" class="dlg-form" data-dialog-form>
-      <h2 id="dlg-h" data-dialog-title>Invite user</h2>
-      <label class="field">
-        <span>Name</span>
-        <input class="input" type="text" required autocomplete="off" data-f="name" />
-      </label>
-      <label class="field">
-        <span>Email</span>
-        <input class="input" type="email" required autocomplete="off" placeholder="name@rsop.example" data-f="email" />
-      </label>
-      <label class="field">
-        <span>Role</span>
-        <select class="input" data-f="role">
-          {roleList.map((r) => <option value={r}>{r}</option>)}
-        </select>
-      </label>
-      <p class="dlg-note" data-dialog-note hidden>
-        <Icon name="check" size={16} />
-        <span data-dialog-note-text></span>
-      </p>
-      <div class="dlg-actions">
-        <button class="btn" type="button" data-dialog-close>Cancel</button>
-        <button class="btn primary" type="submit" data-dialog-submit>Send invite</button>
+      <header class="dlg-head">
+        <h2 id="dlg-h" data-dialog-title>Invite user</h2>
+      </header>
+      <div class="dlg-body">
+        <label class="field">
+          <span>Name</span>
+          <input class="input" type="text" required autocomplete="off" data-f="name" />
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input class="input" type="email" required autocomplete="off" placeholder="name@rsop.example" data-f="email" />
+        </label>
+        <label class="field">
+          <span>Role</span>
+          <select class="input" data-f="role">
+            {roleList.map((r) => <option value={r}>{r}</option>)}
+          </select>
+        </label>
+        <p class="dlg-note" role="status" data-dialog-note hidden>
+          <Icon name="check" size={16} />
+          <span data-dialog-note-text></span>
+        </p>
       </div>
+      <footer class="dlg-actions">
+        <button class="btn primary" type="submit" data-dialog-submit>Send invite</button>
+        <button class="btn" type="button" data-dialog-close>Cancel</button>
+      </footer>
     </form>
   </dialog>
 </App>
@@ -192,35 +227,63 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
 </script>
 
 <style>
-  .filters {
+  .list {
+    margin-bottom: 8px;
+  }
+
+  /* A Fiori table toolbar: title and count on the left, filters on the right. */
+  .toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
+    gap: 12px 16px;
+    min-height: 52px;
+    padding: 8px 16px;
+  }
+
+  .tb-title {
+    color: var(--ink-2);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .tb-count {
+    font-weight: 400;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
   }
 
   .search {
     position: relative;
-    flex: 0 1 320px;
+    width: 260px;
   }
 
   .search :global(.icon) {
     position: absolute;
     top: 50%;
-    left: 13px;
-    color: var(--faint);
+    right: 10px;
+    color: var(--mut);
     transform: translateY(-50%);
+    pointer-events: none;
   }
 
   .search .input {
-    padding-left: 38px;
-    border-radius: 999px;
+    padding-right: 34px;
+  }
+
+  .search .input::-webkit-search-cancel-button {
+    display: none;
   }
 
   .people {
-    min-width: 680px;
+    min-width: 720px;
   }
 
   .person {
@@ -229,6 +292,7 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
     gap: 12px;
   }
 
+  /* Horizon avatar accents: a light tint of the role colour with the initials in the full colour. */
   [data-role='Admin'] {
     --role: var(--c-violet);
   }
@@ -246,115 +310,129 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 34px;
-    height: 34px;
-    border: 1px solid color-mix(in srgb, var(--role) 55%, transparent);
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: color-mix(in srgb, var(--role) 20%, transparent);
-    font-size: 0.72rem;
-    font-weight: 900;
-    letter-spacing: 0.04em;
+    background: color-mix(in srgb, var(--role) 14%, var(--panel));
+    color: var(--role);
+    font-size: 0.8125rem;
+    font-weight: 600;
   }
 
   .name {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-weight: 800;
+    color: var(--ink);
+    font-weight: 700;
   }
 
-  .you {
-    padding: 0 7px;
-    border: 1px solid var(--stroke-strong);
-    border-radius: 999px;
-    color: var(--mut);
-    font-size: 0.66rem;
-    font-weight: 800;
+  .name .pill {
+    font-weight: 400;
   }
 
   .mail {
     display: block;
     color: var(--mut);
-    font-size: 0.78rem;
+    font-size: 0.875rem;
   }
 
-  .role {
+  /* Fiori ObjectStatus: icon and coloured text, no background. */
+  .ostatus {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    font-size: 0.82rem;
-    font-weight: 800;
+    gap: 6px;
+    color: var(--tone);
+    font-weight: 600;
+    white-space: nowrap;
   }
 
-  .role::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 2px;
-    background: var(--role);
+  .ostatus svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+  }
+
+  .ostatus[data-tone='ok'] {
+    --tone: var(--ok-ink);
+  }
+  .ostatus[data-tone='wait'] {
+    --tone: var(--wait-ink);
+  }
+  .ostatus[data-tone='fail'] {
+    --tone: var(--fail-ink);
+  }
+  .ostatus[data-tone='info'] {
+    --tone: var(--info-ink);
   }
 
   .actions {
+    width: 1%;
     text-align: right;
   }
 
+  /* A transparent Fiori button. */
   .edit {
-    padding: 5px 12px;
-    border: 1px solid var(--stroke);
-    border-radius: 999px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--ink-2);
-    font-size: 0.78rem;
-    font-weight: 800;
+    color: var(--link);
+    font-size: 0.875rem;
+    font-weight: 600;
     cursor: pointer;
   }
 
   .edit:hover {
-    color: var(--ink);
     background: var(--hover);
   }
 
   .empty td {
-    padding: 22px 14px;
+    padding: 24px 16px;
     color: var(--mut);
     text-align: center;
   }
 
-  .role-cards {
+  .rp {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 14px;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+    gap: 16px;
   }
 
-  .role-cards li {
-    display: grid;
-    align-content: start;
-    gap: 6px;
-    padding: 14px 16px;
-    border-radius: var(--radius-sm);
+  /* Row headers read as ordinary cells. */
+  .table tbody th[scope='row'] {
+    height: 44px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--stroke);
+    color: var(--ink);
+    font-weight: 400;
+    white-space: normal;
   }
 
-  .role-cards p {
-    color: var(--mut);
-    font-size: 0.82rem;
-    line-height: 1.45;
+  .table tbody tr:last-child th[scope='row'] {
+    border-bottom: 0;
+  }
+
+  .table tbody tr:hover th[scope='row'] {
+    background: var(--hover);
+  }
+
+  .roles tbody th[scope='row'] {
+    font-weight: 700;
+  }
+
+  .roles {
+    min-width: 420px;
   }
 
   .matrix {
     min-width: 560px;
   }
 
-  .matrix th[scope='row'] {
-    color: var(--ink);
-    font-size: 0.86rem;
-    font-weight: 700;
-    letter-spacing: 0;
-    text-transform: none;
-  }
-
   .c {
-    width: 110px;
+    width: 92px;
     text-align: center;
   }
 
@@ -363,43 +441,59 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
   }
 
   .no {
-    color: var(--faint);
+    color: var(--mut);
   }
 
+  /* A Fiori dialog: header bar, content, footer bar with actions on the right. */
   .dlg {
-    width: min(440px, calc(100vw - 32px));
+    width: min(480px, calc(100vw - 32px));
     padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--panel);
     color: var(--ink);
     box-shadow: var(--shadow);
   }
 
   .dlg::backdrop {
-    background: rgba(5, 7, 12, 0.6);
-    -webkit-backdrop-filter: blur(3px);
-    backdrop-filter: blur(3px);
+    background: rgba(0, 0, 0, 0.4);
   }
 
-  .dlg-form {
+  .dlg-head {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 16px;
+    box-shadow: inset 0 -1px 0 var(--stroke);
+  }
+
+  .dlg-head h2 {
+    color: var(--ink-2);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .dlg-body {
     display: grid;
-    gap: 14px;
-    padding: 22px;
+    gap: 16px;
+    padding: 16px;
   }
 
-  .dlg-form h2 {
-    font-family: var(--font-serif);
-    font-size: 1.6rem;
-    font-weight: 500;
-  }
-
+  /* A success message strip. */
   .dlg-note {
     display: flex;
+    align-items: center;
     gap: 8px;
-    padding: 10px 12px;
-    border: 1px solid color-mix(in srgb, var(--wait) 45%, transparent);
+    padding: 8px 12px;
+    border: 1px solid var(--ok);
     border-radius: var(--radius-sm);
-    background: color-mix(in srgb, var(--wait) 10%, transparent);
-    color: var(--ink-2);
-    font-size: 0.84rem;
+    background: var(--ok-bg);
+    color: var(--ink);
+    font-size: 0.875rem;
+  }
+
+  .dlg-note :global(.icon) {
+    color: var(--ok-ink);
   }
 
   .dlg-note[hidden] {
@@ -410,21 +504,26 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+    min-height: 52px;
+    align-items: center;
+    padding: 8px 16px;
+    box-shadow: inset 0 1px 0 var(--stroke);
   }
 
-  @media (max-width: 900px) {
-    .role-cards {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .dlg-actions .btn[hidden] {
+    display: none;
   }
 
-  @media (max-width: 480px) {
-    .role-cards {
+  @media (max-width: 1100px) {
+    .rp {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
 
+  @media (max-width: 600px) {
+    .filters,
     .search {
-      flex-basis: 100%;
+      width: 100%;
     }
   }
 </style>

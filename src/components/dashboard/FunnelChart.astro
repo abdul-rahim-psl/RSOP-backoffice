@@ -32,14 +32,15 @@ const rows = stages.map((s, i) => {
 
 <figure class="chart glass">
   <div class="chart-head">
-    <h3>From inquiry to paid bill</h3>
-    <p>Counts from both logs; a payment isn't matched to its inquiry</p>
+    <h3>Inquiry to payment funnel</h3>
+    <p>Counts from both logs · payments not matched to inquiries</p>
   </div>
 
   <BarRows rows={rows} max={Math.max(1, ...stages.map((s) => s.value))} />
 
+  <div class="chart-foot">
   <details class="table-view">
-    <summary><Icon name="table" size={15} />Show as a table</summary>
+    <summary><Icon name="table" size={16} />View as table</summary>
     <div class="table-wrap">
       <table class="table">
         <thead><tr><th>Stage</th><th class="num">Today</th><th class="num">Of the stage before</th></tr></thead>
@@ -57,4 +58,5 @@ const rows = stages.map((s, i) => {
       </table>
     </div>
   </details>
+  </div>
 </figure>

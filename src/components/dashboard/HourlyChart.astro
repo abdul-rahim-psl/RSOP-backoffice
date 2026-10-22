@@ -52,7 +52,7 @@ const tip = (i: number) =>
       {
         ticks.map((t) => (
           <span class="gl" style={`--v:${t}`}>
-            <span class="tick mono">{t}</span>
+            <span class="tick">{t}</span>
           </span>
         ))
       }
@@ -72,19 +72,20 @@ const tip = (i: number) =>
               <span class="seg ok" style={`--n:${hourly.ok[i]}`} />
             </span>
             {i === peakAt && peak > 0 && <span class="peak">{peak}</span>}
-            <span class="xl mono">{h}</span>
+            <span class="xl">{h}</span>
           </li>
         ))
       }
     </ol>
   </div>
 
+  <div class="chart-foot">
   <p class="chart-note">
-    {int(totals.reduce((a, b) => a + b, 0))} today, by the hour they were logged in Pakistan time. <a href={href}>Open the log</a>
+    Total today: {int(totals.reduce((a, b) => a + b, 0))} · Times in PKT · <a href={href}>Open log</a>
   </p>
 
   <details class="table-view">
-    <summary><Icon name="table" size={15} />Show as a table</summary>
+    <summary><Icon name="table" size={16} />View as table</summary>
     <div class="table-wrap">
       <table class="table">
         <thead>
@@ -106,16 +107,17 @@ const tip = (i: number) =>
       </table>
     </div>
   </details>
+  </div>
 </figure>
 
 <style>
   /* --head leaves room above the top gridline for the peak's label. */
   .plot {
     --axis: 24px;
-    --gutter: 36px;
+    --gutter: 32px;
     --head: 20px;
     position: relative;
-    height: 250px;
+    height: 240px;
   }
 
   .grid {
@@ -138,9 +140,10 @@ const tip = (i: number) =>
   .tick {
     position: absolute;
     right: calc(100% + 8px);
-    bottom: -7px;
-    color: var(--faint);
-    font-size: 0.68rem;
+    bottom: -8px;
+    color: var(--mut);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
   }
 
   .cols {
@@ -152,22 +155,22 @@ const tip = (i: number) =>
 
   .col {
     position: relative;
-    border-radius: 8px;
+    border-radius: 4px;
   }
 
   .col:hover,
   .col:focus-visible {
-    background: var(--raised);
+    background: var(--hover);
   }
 
-  /* Thin columns (≤ 24px), square at the baseline, rounded at the data end; a 2px surface gap between segments. */
+  /* Thin columns (at most 24px), square at the baseline; a 1px surface gap between segments. */
   .stack {
     position: absolute;
     bottom: var(--axis);
     left: 50%;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
     width: min(24px, 55%);
     height: calc(var(--total) / var(--top) * (100% - var(--axis)));
     transform: translateX(-50%);
@@ -187,21 +190,17 @@ const tip = (i: number) =>
   }
 
   .stack > :first-child {
-    border-radius: 4px 4px 0 0;
-  }
-
-  .col:hover .seg,
-  .col:focus-visible .seg {
-    filter: brightness(1.18);
+    border-radius: 2px 2px 0 0;
   }
 
   .peak {
     position: absolute;
-    bottom: calc(var(--axis) + var(--total) / var(--top) * (100% - var(--axis)) + 6px);
+    bottom: calc(var(--axis) + var(--total) / var(--top) * (100% - var(--axis)) + 4px);
     left: 50%;
-    color: var(--ink);
-    font-size: 0.74rem;
-    font-weight: 900;
+    color: var(--ink-2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
     transform: translateX(-50%);
   }
 
@@ -209,18 +208,20 @@ const tip = (i: number) =>
     position: absolute;
     bottom: 2px;
     left: 50%;
-    color: var(--faint);
-    font-size: 0.68rem;
+    color: var(--mut);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
     transform: translateX(-50%);
   }
 
   @media (max-width: 560px) {
     .xl {
-      font-size: 0.6rem;
+      font-size: 0.625rem;
     }
 
     .plot {
-      --gutter: 30px;
+      --gutter: 28px;
       height: 220px;
     }
   }

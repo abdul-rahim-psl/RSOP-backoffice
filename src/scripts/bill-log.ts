@@ -73,7 +73,7 @@ whenReady('[data-log]', (log) => {
         }
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = 'chip';
+        b.className = 'pbtn';
         b.dataset.page = String(i);
         b.textContent = String(i + 1);
         b.setAttribute('aria-label', `Page ${i + 1}`);
@@ -223,7 +223,7 @@ whenReady('[data-log]', (log) => {
       fresh.forEach((r) => (r.querySelector<HTMLElement>('[data-new]')!.hidden = false));
       const note = log.querySelector<HTMLElement>('[data-new-note]')!;
       if (fresh.length) {
-        note.textContent = `${fresh.length} new since your last visit.`;
+        note.textContent = `${fresh.length} new since your last visit`;
         note.hidden = false;
       }
     }

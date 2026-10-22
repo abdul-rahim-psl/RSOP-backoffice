@@ -17,13 +17,13 @@ const byId = nodeById(flow);
 
 <section class="timeline" aria-labelledby="tl-h">
   <div class="tl-head">
-    <h2 class="seclabel" id="tl-h">Timeline</h2>
+    <h2 class="tl-title" id="tl-h">Timeline</h2>
     {
       flow.txns.map((t) => (
         <p class="tl-which" data-txn={t.n} data-on={on(t.n)}>
           <span class="tl-n mono">{t.n}</span>
           <span class="tl-ref mono">{t.ref}</span>
-          <span class="tl-started">started {t.started}</span>
+          <span class="tl-started">Started {t.started}</span>
           <span class="txn-out" data-tone={t.tone}>
             <ToneIcon tone={t.tone} />
             {t.outcome}
@@ -40,14 +40,15 @@ const byId = nodeById(flow);
       </button>
       <button class="tl-btn" type="button" data-act="next" aria-label="Next event"><Icon name="next" size={16} /></button>
       <button class="tl-btn" type="button" data-act="last" aria-label="Last event"><Icon name="last" size={16} /></button>
-      <span class="tl-count mono" data-tl-count></span>
+      <span class="tl-count" data-tl-count></span>
+      <span class="tb-sep" aria-hidden="true"></span>
       <button class="tl-clear" type="button" data-act="clear">Clear</button>
     </div>
   </div>
 
   <p class="tl-empty" data-tl-empty hidden>
     <Icon name="info" size={16} />
-    Pick a transaction on the left to replay it here, event by event.
+    Select a transaction to replay it event by event
   </p>
 
   <div class="tl-body">

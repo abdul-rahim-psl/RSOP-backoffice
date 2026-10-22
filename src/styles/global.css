@@ -1,127 +1,171 @@
+/* SAP's 72 typeface, self-hosted from @sap-theming/theming-base-content (Apache-2.0). */
 @font-face {
-  font-family: 'EB Garamond';
+  font-family: '72';
   font-style: normal;
-  font-weight: 400 800;
+  font-weight: 400;
   font-display: swap;
-  src: url('/fonts/eb-garamond.woff2') format('woff2');
+  src: url('/fonts/72-Regular.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'EB Garamond';
-  font-style: italic;
-  font-weight: 400 800;
-  font-display: swap;
-  src: url('/fonts/eb-garamond-italic.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Nunito';
+  font-family: '72';
   font-style: normal;
-  font-weight: 400 900;
+  font-weight: 600;
   font-display: swap;
-  src: url('/fonts/nunito.woff2') format('woff2');
+  src: url('/fonts/72-Semibold.woff2') format('woff2');
 }
 
-/* Dark is the default look; light is the visitor's choice from the toggle. Tokens follow RSOP demo. */
+@font-face {
+  font-family: '72';
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url('/fonts/72-Bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: '72Mono';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/72Mono-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: '72Mono';
+  font-style: normal;
+  font-weight: 600 900;
+  font-display: swap;
+  src: url('/fonts/72Mono-Bold.woff2') format('woff2');
+}
+
+/* SAP Fiori Horizon is the default; Evening Horizon is the toggle's dark theme. Values come from the SAP theming base content. */
 :root {
-  color-scheme: dark;
-  --bg: #0a0c14;
-  --glow: rgba(45, 60, 120, 0.2);
-  --panel: rgba(14, 17, 28, 0.82);
-  --panel-solid: #0f121d;
-  --raised: rgba(130, 145, 190, 0.06);
-  --hover: rgba(130, 145, 190, 0.1);
-  --stroke: rgba(130, 145, 190, 0.16);
-  --stroke-strong: rgba(130, 145, 190, 0.34);
-  --ink: #edeff7;
-  --ink-2: #c6cde0;
-  --mut: #98a0b8;
-  --faint: #7f87a0;
-  --accent: #ff3b30;
-  --select: #8fb1ff;
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  color-scheme: light;
+  --bg: #f5f6f7;
+  --glow: transparent;
+  --panel: #ffffff;
+  --panel-solid: #ffffff;
+  --shell: #ffffff;
+  --raised: #f5f6f7;
+  --hover: #eaecee;
+  --selected: #ebf8ff;
+  --stroke: #e5e5e5;
+  --stroke-strong: #bcc3ca;
+  --field-border: #556b81;
+  --ink: #131e29;
+  --ink-2: #1d2d3e;
+  --mut: #556b82;
+  --faint: #5b738b;
+  --accent: #0070f2;
+  --link: #0064d9;
+  --select: #0032a5;
+  --shadow: 0 0 0 1px rgba(34, 53, 72, 0.48), 0 2px 8px 0 rgba(34, 53, 72, 0.3);
+  --card-shadow: 0 0 2px 0 rgba(34, 53, 72, 0.2), 0 2px 4px 0 rgba(34, 53, 72, 0.2);
+  --shell-shadow: 0 2px 2px 0 rgba(34, 53, 72, 0.15), inset 0 -1px 0 0 rgba(34, 53, 72, 0.2);
 
-  /* Party colours from RSOP demo, validated there as a set (adjacent CVD ΔE ≥ 16). */
-  --c-orange: #d9773f;
-  --c-blue: #4e7bf1;
-  --c-pink: #e5487a;
-  --c-violet: #9b7bf0;
-  --c-green: #23a88a;
-  --c-grey: #8790a8;
+  /* Party colours, mapped onto the Horizon accent palette. */
+  --c-orange: #d27700;
+  --c-blue: #0057d2;
+  --c-pink: #ba066c;
+  --c-violet: #5d36ff;
+  --c-green: #046c7a;
+  --c-grey: #5b738b;
 
-  /* Status colours always travel with an icon and a word; the -ink variants are for small text. */
-  --ok: #3dd68c;
-  --fail: #ff6259;
-  --wait: #f2b544;
-  --info: #8fb1ff;
-  --ok-ink: #3dd68c;
-  --fail-ink: #ff6259;
-  --wait-ink: #f2b544;
+  /* Semantic colours; each always travels with an icon and a word. -ink is for text, -bg for tinted surfaces. */
+  --ok: #30914c;
+  --fail: #f53232;
+  --wait: #e76500;
+  --info: #0070f2;
+  --ok-ink: #256f3a;
+  --fail-ink: #aa0808;
+  --wait-ink: #b44f00;
+  --info-ink: #0064d9;
+  --ok-bg: #f5fae5;
+  --fail-bg: #ffeaf4;
+  --wait-bg: #fff8d6;
+  --info-bg: #e1f4ff;
+  --neutral-bg: #eff1f2;
 
-  /* Chart marks, checked with the dataviz validator against --panel-solid. */
-  --viz-settled: #299236;
-  --viz-refused: #f0555b;
-  --viz-1: #3987e5;
-  --viz-o1: #9ec5f4;
-  --viz-o2: #6da7ec;
-  --viz-o3: #3987e5;
-  --viz-o4: #256abf;
-  --viz-o5: #184f95;
-  --viz-grid: rgba(130, 145, 190, 0.13);
-  --viz-axis: rgba(130, 145, 190, 0.3);
+  /* Chart marks from the Horizon chart palette. */
+  --viz-settled: #30914c;
+  --viz-refused: #f53232;
+  --viz-1: #168eff;
+  --viz-o1: #003b72;
+  --viz-o2: #0065c3;
+  --viz-o3: #168eff;
+  --viz-o4: #62b3ff;
+  --viz-o5: #a6d3ff;
+  --viz-grid: #e5e5e5;
+  --viz-axis: #a8b2bd;
 
-  --font-serif: 'EB Garamond', Georgia, serif;
-  --font-sans: 'Nunito', ui-rounded, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
-  --radius: 16px;
-  --radius-sm: 10px;
-  --header-h: 58px;
-  --gutter: clamp(16px, 2.4vw, 28px);
+  --font-sans: '72', '72full', Arial, Helvetica, sans-serif;
+  /* Kept so older rules that ask for the serif get the house face instead. */
+  --font-serif: var(--font-sans);
+  --font-mono: '72Mono', ui-monospace, 'Cascadia Mono', Menlo, monospace;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-field: 4px;
+  --shell-h: 52px;
+  --tabs-h: 44px;
+  --header-h: calc(var(--shell-h) + var(--tabs-h));
+  --gutter: clamp(16px, 2.2vw, 32px);
 }
 
-:root[data-theme='light'] {
-  color-scheme: light;
-  --bg: #f6f2ea;
-  --glow: rgba(78, 123, 241, 0.08);
-  --panel: rgba(255, 253, 249, 0.88);
-  --panel-solid: #fffdf9;
-  --raised: rgba(30, 36, 60, 0.035);
-  --hover: rgba(30, 36, 60, 0.06);
-  --stroke: rgba(30, 36, 60, 0.12);
-  --stroke-strong: rgba(30, 36, 60, 0.28);
-  --ink: #12141c;
-  --ink-2: #33384a;
-  --mut: #575d72;
-  --faint: #676d82;
-  --accent: #e0251b;
-  --select: #2f5fd6;
-  --shadow: 0 18px 50px rgba(40, 32, 20, 0.14);
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #12171c;
+  --panel: #1d232a;
+  --panel-solid: #1d232a;
+  --shell: #1d232a;
+  --raised: #161c22;
+  --hover: #222b35;
+  --selected: #1d2d3e;
+  --stroke: #2e3742;
+  --stroke-strong: #3a4a5a;
+  --field-border: #a9b4be;
+  --ink: #f5f6f7;
+  --ink-2: #eaecee;
+  --mut: #8396a8;
+  --faint: #8396a8;
+  --accent: #0070f2;
+  --link: #4db1ff;
+  --select: #9ad3ff;
+  --shadow: 0 0 0 1px rgba(255, 255, 255, 0.35), 0 2px 8px 0 rgba(0, 0, 0, 0.6);
+  --card-shadow: 0 0 0 1px #2e3742;
+  --shell-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.8), inset 0 -1px 0 0 rgba(255, 255, 255, 0.2);
 
-  --c-orange: #c8641f;
-  --c-blue: #2f5fd6;
-  --c-pink: #c92e63;
-  --c-violet: #6e4fd6;
-  --c-green: #138a70;
-  --c-grey: #6b7286;
+  --c-orange: #ffdf72;
+  --c-blue: #a6e0ff;
+  --c-pink: #ff8cb2;
+  --c-violet: #d3b6ff;
+  --c-green: #64edd2;
+  --c-grey: #a9b4be;
 
-  --ok: #1e9e5a;
-  --fail: #d93a30;
-  --wait: #b7791f;
-  --info: #2f5fd6;
-  --ok-ink: #157a43;
-  --fail-ink: #c0322a;
-  --wait-ink: #8f5d12;
+  --ok: #6dad1f;
+  --fail: #fa6161;
+  --wait: #f7bf00;
+  --info: #4db1ff;
+  --ok-ink: #97dd40;
+  --fail-ink: #fa6161;
+  --wait-ink: #ffdf72;
+  --info-ink: #4db1ff;
+  --ok-bg: #11331a;
+  --fail-bg: #350000;
+  --wait-bg: #382700;
+  --info-bg: #00144a;
+  --neutral-bg: #242e38;
 
-  --viz-settled: #146720;
-  --viz-refused: #e76767;
-  --viz-1: #2a78d6;
-  --viz-o1: #104281;
-  --viz-o2: #1c5cab;
-  --viz-o3: #2a78d6;
-  --viz-o4: #5598e7;
-  --viz-o5: #86b6ef;
-  --viz-grid: rgba(30, 36, 60, 0.09);
-  --viz-axis: rgba(30, 36, 60, 0.24);
+  --viz-settled: #6dad1f;
+  --viz-refused: #fa6161;
+  --viz-1: #3278be;
+  --viz-o1: #a6d3ff;
+  --viz-o2: #7aabdc;
+  --viz-o3: #5291d1;
+  --viz-o4: #3278be;
+  --viz-o5: #1d456d;
+  --viz-grid: #2e3742;
+  --viz-axis: #5b6b7b;
 }
 
 /* While the theme switches, colours change in one frame instead of some fading on their own. */
@@ -144,13 +188,11 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
-  background:
-    radial-gradient(110% 70% at 50% 120%, var(--glow), transparent 60%) fixed,
-    var(--bg);
+  overflow-x: clip;
+  background: var(--bg);
   color: var(--ink);
-  font: 500 0.9375rem/1.55 var(--font-sans);
+  font: 400 0.875rem/1.45 var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
 }
 
 h1,
@@ -184,9 +226,8 @@ select {
 }
 
 :focus-visible {
-  outline: 2px solid var(--select);
-  outline-offset: 2px;
-  border-radius: 6px;
+  outline: 2px dotted var(--select);
+  outline-offset: 1px;
 }
 
 .mono {
@@ -206,94 +247,103 @@ select {
   white-space: nowrap;
 }
 
-/* Marble-style type from RSOP demo: a serif title that ends on a coloured full stop. */
+/* Fiori title levels: no display type, no decoration. */
 .display {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  font-size: clamp(2.6rem, 5.4vw, 4.4rem);
-  line-height: 1.02;
-  text-wrap: balance;
+  color: var(--ink-2);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .title {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  font-size: clamp(1.9rem, 3.2vw, 2.5rem);
-  line-height: 1.05;
-  letter-spacing: 0.002em;
+  color: var(--ink-2);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .pd {
-  color: var(--accent);
+  display: none;
 }
 
-.eyebrow {
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+/* Breadcrumb line above a page title. */
+.eyebrow,
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
   color: var(--mut);
+  font-size: 0.875rem;
+}
+
+.crumbs a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.crumbs a:hover {
+  text-decoration: underline;
+}
+
+.crumbs .sep {
+  color: var(--faint);
 }
 
 .seclabel {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--faint);
+  color: var(--mut);
+  font-size: 0.8125rem;
+  font-weight: 700;
 }
 
 .muted {
   color: var(--mut);
 }
 
-/* The glass panel every card is built on. */
+/* A Fiori card: white surface, soft shadow, no border. */
 .glass {
   background: var(--panel);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--stroke);
+  border: 0;
   border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 38px;
-  padding: 8px 16px;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
   border: 1px solid var(--stroke-strong);
-  border-radius: 999px;
-  background: var(--raised);
-  color: var(--ink);
-  font-size: 0.86rem;
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--link);
+  font-size: 0.875rem;
+  font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
+  transition: background 0.1s;
 }
 
 .btn:hover {
   background: var(--hover);
-  border-color: var(--mut);
 }
 
 .btn.primary {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 .btn.primary:hover {
-  background: var(--ink-2);
-  border-color: var(--ink-2);
+  background: #0064d9;
+  border-color: #0064d9;
 }
 
 .btn svg {
@@ -301,147 +351,171 @@ select {
   height: 16px;
 }
 
+.btn[hidden] {
+  display: none;
+}
+
 .btn[disabled],
 .btn[aria-disabled='true'] {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* A status word with its dot; the dot's colour is never the only signal. */
+/* A Fiori tag: a tinted label whose words carry the meaning. */
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 9px;
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+  gap: 5px;
+  padding: 1px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: var(--tone-bg, var(--neutral-bg));
+  color: var(--tone-ink, var(--ink));
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--ink);
+  line-height: 1.4;
   white-space: nowrap;
 }
 
-.pill::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--tone, var(--mut));
-}
-
 .pill[data-tone='ok'] {
-  --tone: var(--ok);
+  --tone-bg: var(--ok-bg);
+  --tone-ink: var(--ok-ink);
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
 }
 
 .pill[data-tone='fail'] {
-  --tone: var(--fail);
+  --tone-bg: var(--fail-bg);
+  --tone-ink: var(--fail-ink);
+  border-color: color-mix(in srgb, var(--fail) 40%, transparent);
 }
 
 .pill[data-tone='wait'] {
-  --tone: var(--wait);
+  --tone-bg: var(--wait-bg);
+  --tone-ink: var(--wait-ink);
+  border-color: color-mix(in srgb, var(--wait) 40%, transparent);
 }
 
 .pill[data-tone='info'] {
-  --tone: var(--info);
+  --tone-bg: var(--info-bg);
+  --tone-ink: var(--info-ink);
+  border-color: color-mix(in srgb, var(--info) 40%, transparent);
 }
 
-/* Filter chips: a row of toggle buttons that narrow a list. */
+/* Filter toggles, styled as a Fiori segmented button. */
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  min-height: 32px;
-  padding: 4px 12px;
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--mut);
-  font-size: 0.8rem;
-  font-weight: 800;
+  gap: 6px;
+  min-height: 36px;
+  margin-left: -1px;
+  padding: 0 12px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--link);
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
-  transition:
-    color 0.15s,
-    background 0.15s,
-    border-color 0.15s;
+}
+
+.chip:first-child {
+  margin-left: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.chip:last-child {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
 .chip:hover {
-  color: var(--ink);
   background: var(--hover);
 }
 
 .chip[aria-pressed='true'] {
-  color: var(--ink);
-  border-color: var(--stroke-strong);
-  background: var(--raised);
+  position: relative;
+  z-index: 1;
+  border-color: var(--link);
+  background: var(--selected);
 }
 
 .chip .count {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--faint);
+  color: var(--mut);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 
 .field {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .field > span {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: var(--ink-2);
+  color: var(--mut);
+  font-size: 0.875rem;
 }
 
 .input {
   width: 100%;
-  min-height: 42px;
-  padding: 9px 13px;
-  border: 1px solid var(--stroke-strong);
-  border-radius: var(--radius-sm);
-  background: var(--raised);
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-field);
+  background: var(--panel);
   color: var(--ink);
-  font-size: 0.92rem;
-  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.input:hover {
+  border-color: var(--link);
 }
 
 .input::placeholder {
-  color: var(--faint);
+  color: var(--mut);
+  font-style: italic;
 }
 
 .input:focus-visible {
-  outline-offset: 0;
-  border-color: var(--select);
+  outline: 2px dotted var(--select);
+  outline-offset: 2px;
 }
 
 /* The page body for the screens around the Designer. */
 .page {
-  width: min(100% - 2 * var(--gutter), 1320px);
+  width: min(100% - 2 * var(--gutter), 1440px);
   margin-inline: auto;
-  padding: 26px 0 48px;
+  padding: 0 0 48px;
 }
 
+/* A Fiori dynamic page header: a white band across the full width, title on the left, actions on the right. */
 .page-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 14px 24px;
-  margin-bottom: 22px;
+  gap: 12px 24px;
+  margin: 0 calc(50% - 50vw) 24px;
+  padding: 16px calc(50vw - 50%) 16px;
+  background: var(--panel);
+  box-shadow: inset 0 -1px 0 var(--stroke);
 }
 
-.page-head p {
-  margin-top: 8px;
+.page-head p:not(.eyebrow) {
+  margin-top: 2px;
   color: var(--mut);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+}
+
+.page-head .head-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 
 .section-head {
@@ -449,60 +523,65 @@ select {
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px 20px;
-  margin: 34px 0 14px;
+  gap: 8px 20px;
+  margin: 28px 0 12px;
 }
 
 .section-head h2 {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  font-size: 1.7rem;
-  line-height: 1.1;
+  color: var(--ink-2);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .section-head p {
   color: var(--mut);
-  font-size: 0.86rem;
+  font-size: 0.875rem;
 }
 
-/* Data tables share one look: hairline rows, quiet headers, tabular numbers. */
+/* Data tables share one look: a Fiori responsive table inside a card. */
 .table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--stroke);
+  border: 0;
   border-radius: var(--radius);
   background: var(--panel);
+  box-shadow: var(--card-shadow);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
 }
 
 .table th {
-  padding: 11px 14px;
-  border-bottom: 1px solid var(--stroke);
-  color: var(--faint);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--stroke-strong);
+  color: var(--mut);
+  font-size: 0.875rem;
+  font-weight: 400;
   text-align: left;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.table td {
-  padding: 11px 14px;
+.table td,
+.table tbody th {
+  height: 44px;
+  font-weight: inherit;
+  color: inherit;
+  text-align: left;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--stroke);
   vertical-align: middle;
 }
 
-.table tbody tr:last-child td {
+.table tbody tr:last-child :is(td, th) {
   border-bottom: 0;
 }
 
-.table tbody tr:hover td {
-  background: var(--raised);
+.table tbody tr:hover :is(td, th) {
+  background: var(--hover);
 }
 
 .table .num {
@@ -515,19 +594,25 @@ select {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin-top: 40px;
-  padding-top: 18px;
+  margin-top: 32px;
+  padding-top: 16px;
   border-top: 1px solid var(--stroke);
-  color: var(--faint);
-  font-size: 0.78rem;
-  line-height: 1.55;
+  color: var(--mut);
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
 .foot-note svg {
   flex: 0 0 auto;
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
   margin-top: 2px;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --tabs-h: 0px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

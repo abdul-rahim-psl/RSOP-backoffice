@@ -7,56 +7,61 @@ import { can, INQUIRY_LOG, initials, me, PAYMENT_LOG } from '../data/users';
 const path = Astro.url.pathname;
 const links: { href: string; match: string; label: string; icon: IconName }[] = [
   { href: '/dashboard/', match: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  ...(can(me.role, INQUIRY_LOG) ? [{ href: '/inquiries/', match: '/inquiries', label: 'Inquiries', icon: 'inbound' as const }] : []),
-  ...(can(me.role, PAYMENT_LOG) ? [{ href: '/payments/', match: '/payments', label: 'Payments', icon: 'outbound' as const }] : []),
-  { href: '/designer/inquiry/', match: '/designer', label: 'Designer', icon: 'designer' },
-  { href: '/users/', match: '/users', label: 'Users', icon: 'users' },
+  ...(can(me.role, INQUIRY_LOG) ? [{ href: '/inquiries/', match: '/inquiries', label: 'Bill Inquiries', icon: 'inbound' as const }] : []),
+  ...(can(me.role, PAYMENT_LOG) ? [{ href: '/payments/', match: '/payments', label: 'Bill Payments', icon: 'outbound' as const }] : []),
+  { href: '/designer/inquiry/', match: '/designer', label: 'Flow Designer', icon: 'designer' },
+  { href: '/users/', match: '/users', label: 'User Management', icon: 'users' },
 ];
 const current = (match: string) => (path.startsWith(match) ? 'page' : undefined);
 ---
 
 <header class="app-header">
-  <Brand />
+  <div class="shellbar">
+    <button class="menu-btn" type="button" popovertarget="nav-menu" aria-label="Menu">
+      <Icon name="menu" size={18} />
+    </button>
+    <Brand />
 
-  <nav class="nav" aria-label="Back office">
+    <div class="tools">
+      <ThemeToggle />
+      <form action="/logout" method="post">
+        <button class="out-btn" type="submit" aria-label="Sign out">
+          <Icon name="logout" size={16} />
+          <span class="out-word">Sign out</span>
+        </button>
+      </form>
+      <button class="me" type="button" popovertarget="me-menu" aria-label={`${me.name}, account menu`}>
+        <span aria-hidden="true">{initials(me.name)}</span>
+      </button>
+    </div>
+  </div>
+
+  <nav class="shell-tabs" aria-label="Back office">
     {
       links.map((l) => (
         <a href={l.href} aria-current={current(l.match)}>
-          <Icon name={l.icon} size={16} />
           {l.label}
         </a>
       ))
     }
   </nav>
-
-  <div class="tools">
-    <ThemeToggle />
-    <form class="out" action="/logout" method="post">
-      <button class="btn out-btn" type="submit" aria-label="Log out">
-        <Icon name="logout" size={16} />
-        <span class="out-word">Log out</span>
-      </button>
-    </form>
-    <button class="me" type="button" popovertarget="me-menu" aria-label={`${me.name}, account menu`}>
-      <span aria-hidden="true">{initials(me.name)}</span>
-    </button>
-    <button class="menu-btn" type="button" popovertarget="nav-menu" aria-label="Menu">
-      <Icon name="menu" size={18} />
-    </button>
-  </div>
 </header>
 
-<div id="me-menu" class="pop glass" popover>
-  <p class="who">{me.name}</p>
-  <p class="mail">{me.email}</p>
-  <p class="role"><span class="pill" data-tone="info">{me.role}</span></p>
+<div id="me-menu" class="pop" popover>
+  <div class="me-card">
+    <span class="me-avatar" aria-hidden="true">{initials(me.name)}</span>
+    <div>
+      <p class="who">{me.name}</p>
+      <p class="mail">{me.email}</p>
+      <p class="role">{me.role}</p>
+    </div>
+  </div>
   <form action="/logout" method="post">
-    <button class="pop-link" type="submit"><Icon name="logout" size={16} />Log out</button>
+    <button class="pop-link" type="submit"><Icon name="logout" size={16} />Sign out</button>
   </form>
 </div>
 
-<div id="nav-menu" class="pop glass" popover>
-  <p class="seclabel">Back office</p>
+<div id="nav-menu" class="pop pop-left" popover>
   {
     links.map((l) => (
       <a class="pop-link" href={l.href} aria-current={current(l.match)}>
@@ -66,7 +71,7 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
     ))
   }
   <form action="/logout" method="post">
-    <button class="pop-link" type="submit"><Icon name="logout" size={16} />Log out</button>
+    <button class="pop-link" type="submit"><Icon name="logout" size={16} />Sign out</button>
   </form>
 </div>
 
@@ -75,86 +80,62 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
     position: sticky;
     top: 0;
     z-index: 40;
+    background: var(--shell);
+    box-shadow: var(--shell-shadow);
+  }
+
+  .shellbar {
     display: flex;
     align-items: center;
-    gap: 22px;
-    height: var(--header-h);
+    gap: 12px;
+    height: var(--shell-h);
     padding: 0 var(--gutter);
-    background: color-mix(in srgb, var(--bg) 84%, transparent);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--stroke);
-  }
-
-  .nav {
-    display: flex;
-    gap: 4px;
-  }
-
-  .nav a,
-  .pop-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 13px;
-    border: 1px solid transparent;
-    border-radius: 999px;
-    color: var(--mut);
-    font-size: 0.86rem;
-    font-weight: 800;
-    text-decoration: none;
-    transition:
-      color 0.15s,
-      background 0.15s;
-  }
-
-  button.pop-link {
-    width: 100%;
-    background: none;
-    font: inherit;
-    font-size: 0.86rem;
-    cursor: pointer;
-  }
-
-  .out-btn {
-    min-height: 36px;
-    padding: 6px 14px;
-  }
-
-  .nav a:hover,
-  .pop-link:hover {
-    color: var(--ink);
-    background: var(--hover);
-  }
-
-  .nav a[aria-current='page'],
-  .pop-link[aria-current='page'] {
-    color: var(--ink);
-    border-color: var(--stroke-strong);
-    background: var(--raised);
   }
 
   .tools {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 4px;
     margin-left: auto;
   }
 
   .me {
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
+    margin-left: 6px;
     padding: 0;
-    border: 1px solid var(--stroke-strong);
+    border: 0;
     border-radius: 50%;
-    background: color-mix(in srgb, var(--c-violet) 22%, transparent);
-    color: var(--ink);
-    font-size: 0.74rem;
-    font-weight: 900;
-    letter-spacing: 0.04em;
+    background: var(--info-bg);
+    color: var(--info-ink);
+    font-size: 0.75rem;
+    font-weight: 700;
     cursor: pointer;
+  }
+
+  .me:hover {
+    box-shadow: 0 0 0 2px var(--stroke-strong);
+  }
+
+  .out-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--link);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .out-btn:hover {
+    background: var(--hover);
   }
 
   .menu-btn {
@@ -163,72 +144,142 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
     width: 36px;
     height: 36px;
     padding: 0;
-    border: 1px solid var(--stroke);
-    border-radius: 999px;
+    border: 0;
+    border-radius: 8px;
     background: transparent;
     color: var(--ink);
     cursor: pointer;
   }
 
+  .menu-btn:hover {
+    background: var(--hover);
+  }
+
+  /* Launchpad-style page tabs: text only, the current page underlined in the brand blue. */
+  .shell-tabs {
+    display: flex;
+    gap: 4px;
+    height: var(--tabs-h);
+    padding: 0 var(--gutter);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .shell-tabs a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 14px;
+    color: var(--ink);
+    font-size: 0.875rem;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .shell-tabs a:hover {
+    background: var(--hover);
+  }
+
+  .shell-tabs a[aria-current='page'] {
+    color: var(--link);
+    font-weight: 700;
+  }
+
+  .shell-tabs a[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    inset: auto 8px 0;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--link);
+  }
+
   .pop {
-    inset: calc(var(--header-h) + 8px) var(--gutter) auto auto;
-    width: min(270px, calc(100vw - 2 * var(--gutter)));
+    inset: calc(var(--shell-h) - 4px) var(--gutter) auto auto;
+    width: min(280px, calc(100vw - 2 * var(--gutter)));
     margin: 0;
-    padding: 14px 10px 10px;
+    padding: 8px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--panel);
     color: var(--ink);
     box-shadow: var(--shadow);
   }
 
-  .pop .seclabel {
-    margin: 0 8px 8px;
+  .pop-left {
+    inset: calc(var(--shell-h) - 4px) auto auto var(--gutter);
+  }
+
+  .me-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding: 8px 8px 14px;
+    border-bottom: 1px solid var(--stroke);
+  }
+
+  .me-avatar {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--info-bg);
+    color: var(--info-ink);
+    font-weight: 700;
   }
 
   .who {
-    margin: 0 8px;
-    font-weight: 900;
+    font-weight: 700;
   }
 
-  .mail {
-    margin: 0 8px;
-    color: var(--mut);
-    font-size: 0.8rem;
-  }
-
+  .mail,
   .role {
-    margin: 8px 8px 10px;
+    color: var(--mut);
+    font-size: 0.8125rem;
   }
 
   .pop-link {
     display: flex;
+    align-items: center;
+    gap: 10px;
     width: 100%;
-    border-radius: 10px;
-    font-size: 0.92rem;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.875rem;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .pop-link:hover {
+    background: var(--hover);
+  }
+
+  .pop-link[aria-current='page'] {
+    background: var(--selected);
+    color: var(--link);
+    font-weight: 700;
   }
 
   @media (max-width: 760px) {
-    .nav,
-      .menu-btn {
+    .shell-tabs {
+      display: none;
+    }
+
+    .menu-btn {
       display: grid;
     }
 
-    /* On phones Log out keeps its icon and its accessible name. */
-    .out-btn {
-      width: 36px;
-      padding: 0;
-    }
-
+    /* On phones Sign out keeps its icon and its accessible name. */
     .out-word {
       display: none;
-    }
-  }
-
-  @media (max-width: 400px) {
-    .app-header {
-      gap: 12px;
-    }
-
-    .tools {
-      gap: 8px;
     }
   }
 </style>

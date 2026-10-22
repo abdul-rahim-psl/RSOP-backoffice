@@ -14,21 +14,18 @@ const { title, lede, reading, admin = false } = Astro.props;
 
 <div class="page-head">
   <div>
-    <p class="eyebrow">Back office{admin && <> · <span class="audience">Admin</span></>}</p>
-    <h1 class="title">{title}<span class="pd">.</span></h1>
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/dashboard/">Home</a>{admin && <><span class="sep" aria-hidden="true">/</span><span>Monitoring</span></>}</nav>
+    <h1 class="title">{title}</h1>
     <p>{lede}</p>
   </div>
   <div class="head-tools">
-    <span class="pill" data-tone="info">Reading live data…</span>
+    <span class="pill" data-tone="info">Loading</span>
   </div>
 </div>
 
 <div class="loading" role="status" aria-live="polite">
-  <span class="spinner" aria-hidden="true"></span>
-  <p>
-    <strong>Reading {reading}…</strong>
-    <span class="muted">This can take a few seconds.</span>
-  </p>
+  <span class="busy" aria-hidden="true"><i></i><i></i><i></i></span>
+  <p>Loading {reading}…</p>
 </div>
 
 <div class="ghosts" aria-hidden="true">
@@ -40,80 +37,79 @@ const { title, lede, reading, admin = false } = Astro.props;
 </div>
 
 <style>
-  .audience {
-    display: inline-flex;
+  .head-tools {
+    display: flex;
     align-items: center;
-    gap: 6px;
-    color: var(--ink-2);
-  }
-
-  .audience::before {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-radius: 2px;
-    background: var(--c-violet);
-  }
-
-  .head-tools .pill {
-    padding: 6px 12px;
-    font-size: 0.74rem;
   }
 
   .loading {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 18px;
+    gap: 12px;
+    margin-bottom: 16px;
+    color: var(--mut);
   }
 
-  .loading p {
-    display: grid;
-    gap: 2px;
-    font-size: 0.9rem;
+  /* A busy indicator: three dots pulsing in turn. */
+  .busy {
+    display: inline-flex;
+    gap: 4px;
   }
 
-  .spinner {
-    flex: 0 0 auto;
-    width: 26px;
-    height: 26px;
-    border: 3px solid var(--stroke-strong);
-    border-top-color: var(--select);
+  .busy i {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    background: var(--accent);
+    animation: busy 1.2s ease-in-out infinite;
+  }
+
+  .busy i:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .busy i:nth-child(3) {
+    animation-delay: 0.4s;
   }
 
   .ghosts {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
   }
 
   .ghost {
-    height: 112px;
-    border-radius: var(--radius);
+    height: 144px;
     animation: pulse 1.4s ease-in-out infinite;
   }
 
   .ghost.wide {
     grid-column: 1 / -1;
-    height: 260px;
+    height: 280px;
   }
 
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
+  @keyframes busy {
+    0%,
+    80%,
+    100% {
+      opacity: 0.25;
+      transform: scale(0.8);
+    }
+
+    40% {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 
   @keyframes pulse {
     50% {
-      opacity: 0.45;
+      opacity: 0.55;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .spinner {
+    .busy i {
       animation-duration: 2.4s;
     }
 

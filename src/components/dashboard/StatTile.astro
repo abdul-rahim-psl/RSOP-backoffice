@@ -57,51 +57,45 @@ const spark =
 </div>
 
 <style>
+  /* A KPI tile: muted label, large figure, short context lines, then the hourly microchart. */
   .stat {
     position: relative;
     display: grid;
-    align-content: start;
-    gap: 4px;
+    grid-template-rows: auto auto auto auto 1fr;
+    gap: 2px;
     min-width: 0;
-    padding: 16px 18px 14px;
-    border-radius: var(--radius);
+    padding: 16px;
   }
 
   .label {
     color: var(--mut);
-    font-size: 0.8rem;
-    font-weight: 800;
+    font-size: 0.875rem;
   }
 
-  /* Proportional figures at display size; the same sans as everything else, never the serif. */
   .value {
-    font-size: 1.9rem;
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.01em;
-  }
-
-  .hero .value {
-    font-size: clamp(2.8rem, 4.6vw, 3.6rem);
-    letter-spacing: -0.02em;
+    margin: 4px 0 2px;
+    color: var(--ink-2);
+    font-size: 2rem;
+    font-weight: 400;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
   }
 
   .sub {
-    color: var(--ink-2);
-    font-size: 0.84rem;
-    font-weight: 700;
+    color: var(--mut);
+    font-size: 0.875rem;
   }
 
   .delta {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     color: var(--mut);
-    font-size: 0.78rem;
+    font-size: 0.75rem;
   }
 
   .delta b {
-    font-weight: 900;
+    font-weight: 700;
   }
 
   .delta[data-good='true'] b,
@@ -124,8 +118,9 @@ const spark =
 
   .spark {
     position: relative;
+    align-self: end;
     height: 32px;
-    margin-top: 8px;
+    margin-top: 12px;
   }
 
   .spark svg {
@@ -137,8 +132,8 @@ const spark =
 
   .spark path {
     fill: none;
-    stroke: var(--viz-axis);
-    stroke-width: 2;
+    stroke: var(--viz-1);
+    stroke-width: 1.5;
     stroke-linejoin: round;
     stroke-linecap: round;
     vector-effect: non-scaling-stroke;
@@ -146,15 +141,12 @@ const spark =
 
   .dot {
     position: absolute;
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border: 2px solid var(--panel-solid);
     border-radius: 50%;
     background: var(--viz-1);
+    box-sizing: content-box;
     transform: translate(-50%, -50%);
-  }
-
-  .hero .spark {
-    height: 44px;
   }
 </style>

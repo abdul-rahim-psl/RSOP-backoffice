@@ -15,59 +15,53 @@ const { tone, value, label, note, href } = Astro.props;
 ---
 
 <a class="att glass" href={href} data-tone={tone}>
-  <span class="att-icon"><ToneIcon tone={tone} /></span>
+  <span class="att-icon"><ToneIcon tone={tone} ring /></span>
   <span class="att-body">
     <span class="att-top"><b class="att-val">{value}</b><span class="att-label">{label}</span></span>
     <span class="att-note">{note}</span>
   </span>
-  <Icon name="arrow" size={16} class="att-go" />
+  <Icon name="chevron" size={16} class="att-go" />
 </a>
 
 <style>
+  /* A navigation card: status icon, the count in its state colour, and a chevron to the filtered log. */
   .att {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
+    gap: 12px;
+    padding: 12px 16px;
     color: var(--ink);
     text-decoration: none;
-    transition:
-      background 0.15s,
-      border-color 0.15s;
+    transition: background 0.1s;
   }
 
   .att:hover {
-    border-color: var(--stroke-strong);
     background: var(--hover);
   }
 
   [data-tone='ok'] {
-    --tone: var(--ok);
+    --tone: var(--ok-ink);
   }
   [data-tone='fail'] {
-    --tone: var(--fail);
+    --tone: var(--fail-ink);
   }
   [data-tone='wait'] {
-    --tone: var(--wait);
+    --tone: var(--wait-ink);
   }
   [data-tone='info'] {
-    --tone: var(--info);
+    --tone: var(--info-ink);
   }
 
   .att-icon {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--tone) 16%, transparent);
     color: var(--tone);
   }
 
   .att-icon :global(.tone-icon) {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
   }
 
   .att-body {
@@ -83,23 +77,27 @@ const { tone, value, label, note, href } = Astro.props;
   }
 
   .att-val {
-    font-size: 1.45rem;
-    font-weight: 800;
-    line-height: 1.1;
+    color: var(--tone);
+    font-size: 1.5rem;
+    font-weight: 400;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
   }
 
   .att-label {
-    font-weight: 800;
+    color: var(--ink-2);
+    font-weight: 700;
   }
 
   .att-note {
     color: var(--mut);
-    font-size: 0.78rem;
+    font-size: 0.875rem;
   }
 
   .att :global(.att-go) {
     flex: 0 0 auto;
     margin-left: auto;
     color: var(--mut);
+    transform: rotate(-90deg);
   }
 </style>

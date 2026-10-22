@@ -14,7 +14,7 @@ Astro.response.headers.set('Cache-Control', 'no-store');
     <Loading
       slot="fallback"
       title="Dashboard"
-      lede={`Bill inquiries and payments for ${pktLongDay(new Date())}, counted from the logs.`}
+      lede={`Bill inquiries and payments · ${pktLongDay(new Date())}`}
       reading="the bill inquiry and payment logs"
     />
   </DashboardBody>

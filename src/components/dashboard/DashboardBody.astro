@@ -42,7 +42,7 @@ const change = (now: number, before: number | null) => {
 };
 const perHour = (day: LogDay) => day.hourly.ok.map((n, i) => n + day.hourly.error[i] + day.hourly.silent[i]);
 const total = inq.sum.total + pay.sum.total;
-const when = d.today ? `today, up to ${pktTime(d.asOf)} PKT` : `on ${pktLongDay(d.asOf)}, up to the snapshot at ${pktTime(d.asOf)} PKT`;
+const when = d.today ? `Today, up to ${pktTime(d.asOf)} PKT` : `${pktLongDay(d.asOf)}, up to snapshot at ${pktTime(d.asOf)} PKT`;
 
 const attention = sources.flatMap(({ id }) => {
   const day = d[id];
@@ -68,7 +68,7 @@ const attention = sources.flatMap(({ id }) => {
             tone: 'wait' as const,
             value: day.sum.counts.silent,
             label: `${day.sum.counts.silent === 1 ? kind.One : kind.Many} with no reply`,
-            note: 'Logged, but no reply was recorded',
+            note: 'Logged with no reply recorded',
             href: `${page[id]}?show=silent#log`,
           },
         ]
@@ -79,9 +79,9 @@ const attention = sources.flatMap(({ id }) => {
 
 <div class="page-head">
   <div>
-    <p class="eyebrow">Back office</p>
-    <h1 class="title">Dashboard<span class="pd">.</span></h1>
-    <p>Bill inquiries and payments for {pktLongDay(d.asOf)}, counted from the logs.</p>
+    <nav class="crumbs" aria-label="Breadcrumb"><span>Home</span></nav>
+    <h1 class="title">Dashboard</h1>
+    <p>Bill inquiries and payments · {pktLongDay(d.asOf)}</p>
   </div>
   <div class="head-tools">
     <span class="pill" data-tone={pill.tone} title={pill.about}>
@@ -94,15 +94,15 @@ const attention = sources.flatMap(({ id }) => {
 
 <section aria-labelledby="stats-h">
   <div class="section-head first">
-    <h2 id="stats-h">Bill-pay activity<span class="pd">.</span></h2>
-    <p>Every figure counts {when}.</p>
+    <h2 id="stats-h">Bill-pay activity</h2>
+    <p>Period: {when}</p>
   </div>
 
   {
     total === 0 ? (
       <p class="all-clear">
         <ToneIcon tone="info" />
-        Nothing logged {d.today ? 'yet today' : 'that day'}. Refresh after the next inquiry or payment.
+        No activity logged {d.today ? 'yet today' : 'that day'} · refresh after the next inquiry or payment
       </p>
     ) : (
       <>
@@ -111,7 +111,7 @@ const attention = sources.flatMap(({ id }) => {
             hero
             label="Bills paid"
             value={int(pay.sum.counts.returned)}
-            sub={pay.sum.total ? `${pct(pay.sum.counts.returned, pay.sum.total, 0)} of ${int(pay.sum.total)} payments came back SUCCESS` : 'No payments yet'}
+            sub={pay.sum.total ? `${pct(pay.sum.counts.returned, pay.sum.total, 0)} SUCCESS of ${int(pay.sum.total)} payments` : 'No payments yet'}
             delta={change(pay.sum.counts.returned, pay.yesterdayOk)}
             trend={pay.hourly.ok}
           />
@@ -130,14 +130,14 @@ const attention = sources.flatMap(({ id }) => {
             trend={perHour(pay)}
           />
           <StatTile
-            label="Typical reply time"
+            label="Median reply time"
             value={d.medianMs !== null ? duration(d.medianMs) : '—'}
             sub={`Inquiries ${inq.sum.medianMs !== null ? duration(inq.sum.medianMs) : '—'} · payments ${pay.sum.medianMs !== null ? duration(pay.sum.medianMs) : '—'}`}
           />
         </div>
 
         <div class="attention">
-          <p class="seclabel">Needs attention</p>
+          <h3 class="sub-head">Needs attention</h3>
           {attention.length ? (
             <div class="att-grid">
               {attention.map((a) => (
@@ -147,14 +147,14 @@ const attention = sources.flatMap(({ id }) => {
           ) : (
             <p class="all-clear">
               <ToneIcon tone="ok" />
-              Nothing needs attention: every inquiry and payment came back SUCCESS.
+              No open issues · all inquiries and payments returned SUCCESS
             </p>
           )}
         </div>
 
         <div class="pair">
-          <HourlyChart title="Payments per hour" note="Bill payments logged, by result" hours={d.hours} hourly={pay.hourly} okLabel="Paid" href="/payments/" />
-          <HourlyChart title="Inquiries per hour" note="Bill inquiries logged, by result" hours={d.hours} hourly={inq.hourly} okLabel="Bill returned" href="/inquiries/" />
+          <HourlyChart title="Payments per hour" note="Bill payments by result" hours={d.hours} hourly={pay.hourly} okLabel="Paid" href="/payments/" />
+          <HourlyChart title="Inquiries per hour" note="Bill inquiries by result" hours={d.hours} hourly={inq.hourly} okLabel="Bill returned" href="/inquiries/" />
         </div>
 
         <div class="pair">
@@ -176,38 +176,33 @@ const attention = sources.flatMap(({ id }) => {
 {d.latest.length > 0 && <LatestTable latest={d.latest} now={now} />}
 
 <style>
-  .period {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 7px 13px;
-    border: 1px solid var(--stroke);
-    border-radius: 999px;
-    color: var(--ink-2);
-    font-size: 0.8rem;
-    font-weight: 800;
-  }
-
   .section-head.first {
-    margin-top: 6px;
+    margin-top: 0;
   }
 
   .kpis {
     display: grid;
-    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
   }
 
   .attention {
     display: grid;
-    gap: 10px;
-    margin: 22px 0;
+    gap: 8px;
+    margin: 24px 0;
+  }
+
+  .sub-head {
+    color: var(--ink-2);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
   }
 
   .att-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
   }
 
   .all-clear {
@@ -215,35 +210,25 @@ const attention = sources.flatMap(({ id }) => {
     align-items: center;
     gap: 8px;
     color: var(--mut);
-    font-weight: 700;
   }
 
   .head-tools {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-  }
-
-  .head-tools .pill {
-    padding: 6px 12px;
-    font-size: 0.74rem;
+    gap: 12px;
   }
 
   .pair {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-    margin-top: 14px;
+    gap: 16px;
+    margin-top: 16px;
   }
 
   @media (max-width: 1080px) {
     .kpis {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .kpis > :global(.hero) {
-      grid-column: 1 / -1;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .pair {

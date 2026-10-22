@@ -34,18 +34,19 @@ const rows = reasons.map((r) => ({
 
 <figure class="chart glass">
   <div class="chart-head">
-    <h3>What didn't come back SUCCESS</h3>
-    <p>Error replies by reason, and calls with no reply</p>
+    <h3>Non-SUCCESS replies</h3>
+    <p>Error replies by reason, plus no reply</p>
   </div>
 
   {
     rows.length ? (
       <>
         <BarRows rows={rows} max={rows[0].value} />
+        <div class="chart-foot">
         <details class="table-view">
           <summary>
-            <Icon name="table" size={15} />
-            Show as a table
+            <Icon name="table" size={16} />
+            View as table
           </summary>
           <div class="table-wrap">
             <table class="table">
@@ -70,11 +71,12 @@ const rows = reasons.map((r) => ({
             </table>
           </div>
         </details>
+        </div>
       </>
     ) : (
       <p class="all-clear">
         <ToneIcon tone="ok" />
-        Every inquiry and payment today came back SUCCESS.
+        All inquiries and payments today returned SUCCESS
       </p>
     )
   }
@@ -86,6 +88,5 @@ const rows = reasons.map((r) => ({
     align-items: center;
     gap: 8px;
     color: var(--mut);
-    font-weight: 700;
   }
 </style>

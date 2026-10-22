@@ -1,32 +1,26 @@
 ---
 import Base from '../layouts/Base.astro';
 import Brand from '../components/Brand.astro';
-import Icon from '../components/Icon.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import { safeNext } from '../lib/session';
 
 // The screen asked for before signing in, so the form can go back to it.
 const next = safeNext(Astro.url.searchParams.get('next'));
-
-// KJ's pipeline, left to right, as a quiet illustration beside the form.
-const line = [
-  { label: 'Incoming Bill', c: 'var(--c-pink)', icon: 'inbound' },
-  { label: 'WSI', c: 'var(--c-violet)', icon: 'wsi' },
-  { label: 'RabbitMQ', c: 'var(--c-orange)', icon: 'queue' },
-  { label: 'REST', c: 'var(--c-blue)', icon: 'rest' },
-] as const;
 ---
 
 <Base title="Sign in" description="Sign in to the RSOP back office.">
   <div class="signin">
-    <header class="top">
-      <Brand href="/" size="lg" />
+    <div class="top">
       <ThemeToggle />
-    </header>
+    </div>
 
-    <main class="split">
-      <section class="card glass" aria-labelledby="signin-h">
-        <h1 class="title" id="signin-h">Sign in<span class="pd">.</span></h1>
+    <main class="center">
+      <section class="card" aria-labelledby="signin-h">
+        <div class="brand-row">
+          <Brand href="/" size="lg" />
+          <p class="platform">Raast Service Orchestration Platform</p>
+        </div>
+        <h1 id="signin-h">Sign in</h1>
         <!-- No name attributes on the inputs: what is typed here is never sent, only where to go next. -->
         <form class="form" action="/signin" method="post" data-signin>
           <input type="hidden" name="next" value={next} />
@@ -38,202 +32,80 @@ const line = [
             <span>Password</span>
             <input class="input" type="password" autocomplete="current-password" required />
           </label>
-          <button class="btn primary wide" type="submit">
-            Sign in
-            <Icon name="arrow" size={16} />
-          </button>
+          <button class="btn primary wide" type="submit">Sign in</button>
         </form>
       </section>
-      <section class="pitch" aria-labelledby="pitch-h">
-        <p class="eyebrow">Raast Service Orchestration Platform</p>
-        <h2 class="display" id="pitch-h">Every bill, end to end<span class="pd">.</span></h2>
-        <p class="lede">
-          Design the flows a bill takes through RSOP, watch payments settle, and see where each bill stands, from one
-          back office.
-        </p>
-        <ol class="pipe" aria-label="The RSOP pipeline">
-          <li class="ring start"><span class="sr-only">Start</span></li>
-          {
-            line.map((s) => (
-              <li class="step" style={`--c:${s.c}`}>
-                <span class="box">
-                  <Icon name={s.icon} size={20} />
-                </span>
-                <span class="cap">{s.label}</span>
-              </li>
-            ))
-          }
-          <li class="ring end">
-            <Icon name="biller" size={16} />
-            <span class="cap">Gov</span>
-          </li>
-        </ol>
-      </section>
-
+      <p class="legal">© 2026 RSOP · Back Office</p>
     </main>
-
   </div>
 </Base>
 
 <style>
   .signin {
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr;
     min-height: 100dvh;
-    padding: 22px var(--gutter);
+    padding: 12px 16px 32px;
   }
 
   .top {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: min(100%, 1180px);
-    margin-inline: auto;
+    justify-content: flex-end;
   }
 
-  .split {
+  .center {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 420px);
-    align-items: center;
-    gap: clamp(32px, 6vw, 96px);
-    width: min(100%, 1180px);
-    margin: 0 auto;
-    padding: 40px 0;
-  }
-
-  /* The form comes first in the page for keyboards and screen readers; on wide screens it sits on the right. */
-  .pitch {
-    display: grid;
-    grid-row: 1;
-    grid-column: 1;
-    gap: 18px;
-  }
-
-  .lede {
-    max-width: 52ch;
-    color: var(--ink-2);
-    font-size: 1.05rem;
-    line-height: 1.6;
-  }
-
-  .pipe {
-    display: flex;
-    align-items: flex-start;
-    gap: 0;
-    margin-top: 18px;
-  }
-
-  .pipe li {
-    position: relative;
-    display: grid;
+    align-content: center;
     justify-items: center;
-    gap: 8px;
-    flex: 0 0 auto;
-  }
-
-  .pipe li + li {
-    margin-left: 38px;
-  }
-
-  /* The joining lines between steps, drawn on the gap's left side. */
-  .pipe li + li::before {
-    content: '';
-    position: absolute;
-    top: 21px;
-    right: calc(100% + 4px);
-    width: 30px;
-    border-top: 1.5px solid var(--stroke-strong);
-  }
-
-  .pipe .step .box {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 42px;
-    border: 1.5px solid color-mix(in srgb, var(--c) 60%, transparent);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--c) 14%, var(--panel-solid));
-    color: var(--c);
-  }
-
-  .cap {
-    color: var(--mut);
-    font-size: 0.72rem;
-    font-weight: 800;
-    white-space: nowrap;
-  }
-
-  .ring {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-  }
-
-  .ring.start {
-    margin-top: 0;
-    border: 2.5px solid var(--ok);
-  }
-
-  .ring.end {
-    place-items: center;
-    border: 5px solid var(--c-green);
-    color: var(--c-green);
-  }
-
-  .ring.end .cap {
-    position: absolute;
-    top: 50px;
+    gap: 16px;
+    padding-bottom: 6vh;
   }
 
   .card {
     display: grid;
-    grid-row: 1;
-    grid-column: 2;
-    gap: 16px;
-    padding: 30px 28px 24px;
-    box-shadow: var(--shadow);
+    gap: 24px;
+    width: min(100%, 400px);
+    padding: 32px;
+    border-radius: var(--radius);
+    background: var(--panel);
+    box-shadow: var(--card-shadow);
+  }
+
+  .brand-row {
+    display: grid;
+    gap: 6px;
+  }
+
+  .platform {
+    color: var(--mut);
+    font-size: 0.8125rem;
+  }
+
+  h1 {
+    color: var(--ink-2);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.25;
   }
 
   .form {
     display: grid;
-    gap: 14px;
+    gap: 16px;
   }
 
   .wide {
     width: 100%;
-    min-height: 44px;
-    margin-top: 4px;
+    margin-top: 8px;
   }
 
-  @media (max-width: 900px) {
-    .split {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 34px;
-      padding: 28px 0;
-    }
-
-    .card,
-    .pitch {
-      grid-row: auto;
-      grid-column: 1;
-    }
-
-    .pipe li + li {
-      margin-left: 26px;
-    }
-
-    .pipe li + li::before {
-      width: 18px;
-    }
+  .legal {
+    color: var(--mut);
+    font-size: 0.75rem;
   }
 
   @media (max-width: 480px) {
-    .pipe {
-      display: none;
-    }
-
     .card {
-      padding: 24px 20px 20px;
+      padding: 24px 20px;
     }
   }
 </style>

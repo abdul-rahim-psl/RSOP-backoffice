@@ -4,31 +4,58 @@ import type { Tone } from '../lib/flow';
 interface Props {
   tone: Tone;
   class?: string;
+  /** Draws the outlined-circle status glyphs used next to status text; off by default, so badges that already circle the icon keep the bare glyph. */
+  ring?: boolean;
 }
 
-const { tone, class: cls } = Astro.props;
+const { tone, class: cls, ring = false } = Astro.props;
 ---
 
-<svg
-  class:list={['tone-icon', cls]}
-  data-tone={tone}
-  viewBox="0 0 16 16"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="2"
-  stroke-linecap="round"
-  stroke-linejoin="round"
-  aria-hidden="true"
->
-  {tone === 'ok' && <path d="m4 8.4 2.6 2.5L12 5.3" />}
-  {tone === 'fail' && <path d="M5 5l6 6M11 5l-6 6" />}
-  {
-    tone === 'wait' && (
-      <>
-        <circle cx="8" cy="8" r="4.9" stroke-width="1.6" />
-        <path d="M8 5.7V8l1.6 1.1" stroke-width="1.6" />
-      </>
-    )
-  }
-  {tone === 'info' && <circle cx="8" cy="8" r="2.2" fill="currentColor" stroke="none" />}
-</svg>
+{
+  ring ? (
+    <svg
+      class:list={['tone-icon', 'ring', cls]}
+      data-tone={tone}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.4"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6.6" />
+      {tone === 'ok' && <path d="m5.2 8.2 1.9 1.9 3.7-3.9" />}
+      {tone === 'fail' && <path d="M5.9 5.9l4.2 4.2M10.1 5.9l-4.2 4.2" />}
+      {tone === 'wait' && <path d="M8 4.8V8l2.2 1.4" />}
+      {tone === 'info' && (
+        <>
+          <path d="M8 7.3v3.9" />
+          <circle cx="8" cy="5" r="0.4" fill="currentColor" />
+        </>
+      )}
+    </svg>
+  ) : (
+    <svg
+      class:list={['tone-icon', cls]}
+      data-tone={tone}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      {tone === 'ok' && <path d="m4 8.4 2.6 2.5L12 5.3" />}
+      {tone === 'fail' && <path d="M5 5l6 6M11 5l-6 6" />}
+      {tone === 'wait' && (
+        <>
+          <circle cx="8" cy="8" r="4.9" stroke-width="1.6" />
+          <path d="M8 5.7V8l1.6 1.1" stroke-width="1.6" />
+        </>
+      )}
+      {tone === 'info' && <circle cx="8" cy="8" r="2.2" fill="currentColor" stroke="none" />}
+    </svg>
+  )
+}

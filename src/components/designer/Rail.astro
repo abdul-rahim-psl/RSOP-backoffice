@@ -12,18 +12,16 @@ const { flow, flows } = Astro.props;
 ---
 
 <aside class="rail" aria-label="Flows and transactions">
-  <h1 class="dz-title">RSOP Designer<span class="pd">.</span></h1>
+  <h1 class="sr-only">Flow Designer</h1>
 
   <nav class="rail-sec" aria-labelledby="flows-h">
-    <h2 class="seclabel" id="flows-h">Transaction flows</h2>
+    <h2 class="rail-h" id="flows-h">Transaction flows <span class="rail-n">({flows.length})</span></h2>
     <ul class="flow-list">
       {
         flows.map((f) => (
           <li>
             <a class="flow-link" href={`/designer/${f.id}/`} aria-current={f.id === flow.id ? 'page' : undefined}>
-              <span class="tick" aria-hidden="true">
-                {f.id === flow.id && <Icon name="check" size={12} />}
-              </span>
+              <Icon name="designer" size={16} />
               <span class="fl-name">{f.nav}</span>
               <span class="fl-meta">{f.nodes.filter((n) => !isRound(n)).length} steps</span>
             </a>
@@ -34,8 +32,8 @@ const { flow, flows } = Astro.props;
   </nav>
 
   <section class="rail-sec" aria-labelledby="txns-h">
-    <h2 class="seclabel" id="txns-h">Transactions</h2>
-    <p class="rail-hint">{flow.txns.length === 1 ? 'A sample run of this flow. Pick it to replay it on the canvas.' : 'Sample runs of this flow. Pick one to replay it on the canvas.'}</p>
+    <h2 class="rail-h" id="txns-h">Transactions <span class="rail-n">({flow.txns.length})</span></h2>
+    <p class="rail-hint">{flow.txns.length === 1 ? 'Sample run. Select to replay on the canvas' : 'Sample runs. Select one to replay on the canvas'}</p>
     <ul class="txn-list">
       {
         flow.txns.map((t) => (

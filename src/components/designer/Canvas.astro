@@ -58,19 +58,22 @@ const pill = src.live
 <section class="canvas" aria-labelledby="canvas-h">
   <div class="toolbar">
     <div class="tb-title">
-      <h2 id="canvas-h" class="tb-flow">{flow.name}</h2>
-      <span class="pill" data-tone="info">{flow.version}</span>
-      <span class="pill" data-tone={pill.tone} data-source={src.live ? 'live' : 'snapshot'} title={pill.about}>
-        {pill.text}
-        <span class="sr-only">: {pill.about}</span>
-      </span>
+      <div class="tb-line">
+        <h2 id="canvas-h" class="tb-flow">{flow.name}</h2>
+        <span class="pill" data-tone="info">{flow.version}</span>
+        <span class="pill" data-tone={pill.tone} data-source={src.live ? 'live' : 'snapshot'} title={pill.about}>
+          {pill.text}
+          <span class="sr-only">: {pill.about}</span>
+        </span>
+      </div>
       <p class="tb-sum">{flow.summary}</p>
     </div>
-    <div class="tb-tools">
+    <div class="tb-tools" role="toolbar" aria-label="Canvas">
       <button class="tool" type="button" popovertarget="legend" aria-label="Legend">
         <Icon name="legend" size={16} />
         <span class="tool-label">Legend</span>
       </button>
+      <span class="tb-sep" aria-hidden="true"></span>
       <div class="zoom" role="group" aria-label="Zoom">
         <button class="tool sq" type="button" data-zoom="out" aria-label="Zoom out">
           <Icon name="zoom-out" size={16} />
@@ -179,33 +182,42 @@ const pill = src.live
   </div>
 </section>
 
-<div id="legend" class="legend glass" popover>
-  <p class="seclabel">Legend</p>
-  <ul class="lg-list">
-    <li><span class="lg-sw" data-family="raast"></span>Faces Raast</li>
-    <li><span class="lg-sw" data-family="rsop"></span>RSOP’s own processing</li>
-    <li><span class="lg-sw" data-family="queue"></span>Queue or broker</li>
-    <li><span class="lg-sw" data-family="outbound"></span>Outbound call</li>
-    <li><span class="lg-sw" data-family="store"></span>Store, or store-and-forward</li>
-    <li><span class="lg-sw" data-family="biller"></span>Government biller</li>
-    <li><span class="lg-sw" data-family="reject"></span>Refusal</li>
-  </ul>
-  <ul class="lg-list">
-    <li><span class="lg-box"></span>From the RSOP API</li>
-    <li><span class="lg-box dashed"></span>Added from the Open Connect doc</li>
-    <li><span class="lg-term"></span>Where an API chain starts or ends</li>
-    <li>
-      <svg class="lg-line" viewBox="0 0 30 10" aria-hidden="true"><path d="M8 5H22" /><path class="ah" d="M1 5l7-4v8z" /><path class="ah" d="M29 5l-7-4v8z" /></svg>Request and reply
-    </li>
-    <li><svg class="lg-line" viewBox="0 0 30 10" aria-hidden="true"><path d="M1 5H22" /><path class="ah" d="M29 5l-7-4v8z" /></svg>One way; a label names the message</li>
-    <li><svg class="lg-line" viewBox="0 0 30 10" aria-hidden="true"><path class="dot" d="M1 5H29" /></svg>Reads or writes the store</li>
-  </ul>
-  <p class="seclabel lg-sub">With a transaction picked</p>
-  <ul class="lg-list">
-    <li><span class="lg-badge" data-tone="ok"><ToneIcon tone="ok" /></span>Passed</li>
-    <li><span class="lg-badge" data-tone="fail"><ToneIcon tone="fail" /></span>Failed</li>
-    <li><span class="lg-badge" data-tone="wait"><ToneIcon tone="wait" /></span>Waiting</li>
-    <li><span class="lg-badge todo"></span>Not reached (dimmed)</li>
-    <li><span class="lg-ring"></span>The timeline’s current event</li>
-  </ul>
+<div id="legend" class="legend" popover aria-labelledby="legend-h">
+  <header class="lg-head">
+    <h2 id="legend-h">Legend</h2>
+    <button class="tool sq" type="button" popovertarget="legend" popovertargetaction="hide" aria-label="Close legend">
+      <Icon name="x" size={16} />
+    </button>
+  </header>
+  <div class="lg-body">
+    <p class="lg-sub">Step type</p>
+    <ul class="lg-list">
+      <li><span class="lg-sw" data-family="raast"></span>Faces Raast</li>
+      <li><span class="lg-sw" data-family="rsop"></span>RSOP processing</li>
+      <li><span class="lg-sw" data-family="queue"></span>Queue or broker</li>
+      <li><span class="lg-sw" data-family="outbound"></span>Outbound call</li>
+      <li><span class="lg-sw" data-family="store"></span>Store or store-and-forward</li>
+      <li><span class="lg-sw" data-family="biller"></span>Government biller</li>
+      <li><span class="lg-sw" data-family="reject"></span>Refusal</li>
+    </ul>
+    <p class="lg-sub">Shape and line</p>
+    <ul class="lg-list">
+      <li><span class="lg-box"></span>From the RSOP API</li>
+      <li><span class="lg-box dashed"></span>Added from the Open Connect doc</li>
+      <li><span class="lg-term"></span>API chain start or end</li>
+      <li>
+        <svg class="lg-line" viewBox="0 0 30 10" aria-hidden="true"><path d="M8 5H22" /><path class="ah" d="M1 5l7-4v8z" /><path class="ah" d="M29 5l-7-4v8z" /></svg>Request and reply
+      </li>
+      <li><svg class="lg-line" viewBox="0 0 30 10" aria-hidden="true"><path d="M1 5H22" /><path class="ah" d="M29 5l-7-4v8z" /></svg>One way, labelled with the message</li>
+      <li><svg class="lg-line" viewBox="0 0 30 10" aria-hidden="true"><path class="dot" d="M1 5H29" /></svg>Store read or write</li>
+    </ul>
+    <p class="lg-sub">Transaction selected</p>
+    <ul class="lg-list">
+      <li><span class="lg-badge" data-tone="ok"><ToneIcon tone="ok" /></span>Passed</li>
+      <li><span class="lg-badge" data-tone="fail"><ToneIcon tone="fail" /></span>Failed</li>
+      <li><span class="lg-badge" data-tone="wait"><ToneIcon tone="wait" /></span>Waiting</li>
+      <li><span class="lg-badge todo"></span>Not reached (dimmed)</li>
+      <li><span class="lg-ring"></span>Current timeline event</li>
+    </ul>
+  </div>
 </div>
