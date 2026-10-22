@@ -4,11 +4,6 @@ import Icon, { type IconName } from './Icon.astro';
 import ThemeToggle from './ThemeToggle.astro';
 import { can, INQUIRY_LOG, initials, me, PAYMENT_LOG } from '../data/users';
 
-interface Props {
-  live?: boolean;
-}
-
-const { live = false } = Astro.props;
 const path = Astro.url.pathname;
 const links: { href: string; match: string; label: string; icon: IconName }[] = [
   { href: '/dashboard/', match: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -35,19 +30,6 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
   </nav>
 
   <div class="tools">
-    {
-      live ? (
-        <span class="mock" data-live title="This screen reads live data on every load; the other screens are mock">
-          <Icon name="check" size={14} />
-          <span>Live data</span>
-        </span>
-      ) : (
-        <span class="mock" title="Nothing on these screens is connected to a live RSOP">
-          <Icon name="flag" size={14} />
-          <span>Mock data</span>
-        </span>
-      )
-    }
     <ThemeToggle />
     <form class="out" action="/logout" method="post">
       <button class="btn out-btn" type="submit" aria-label="Log out">
@@ -82,13 +64,6 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
         {l.label}
       </a>
     ))
-  }
-  {
-    live ? (
-      <p class="mock-line" data-live><Icon name="check" size={14} />Live data on this screen; the others are mock</p>
-    ) : (
-      <p class="mock-line"><Icon name="flag" size={14} />Mock data: nothing here is live</p>
-    )
   }
   <form action="/logout" method="post">
     <button class="pop-link" type="submit"><Icon name="logout" size={16} />Log out</button>
@@ -166,29 +141,6 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
     margin-left: auto;
   }
 
-  .mock {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 11px;
-    border: 1px dashed color-mix(in srgb, var(--wait) 60%, transparent);
-    border-radius: 999px;
-    color: var(--wait-ink);
-    font-size: 0.74rem;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-  }
-
-  .mock[data-live] {
-    border: 1px solid color-mix(in srgb, var(--ok) 55%, transparent);
-    color: var(--ok-ink);
-  }
-
-  .mock-line[data-live] {
-    color: var(--ok-ink);
-  }
-
   .me {
     display: grid;
     place-items: center;
@@ -253,25 +205,9 @@ const current = (match: string) => (path.startsWith(match) ? 'page' : undefined)
     font-size: 0.92rem;
   }
 
-  .mock-line {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 10px 8px 2px;
-    padding-top: 10px;
-    border-top: 1px solid var(--stroke);
-    color: var(--wait-ink);
-    font-size: 0.78rem;
-    font-weight: 800;
-  }
-
   @media (max-width: 760px) {
     .nav,
-    .mock {
-      display: none;
-    }
-
-    .menu-btn {
+      .menu-btn {
       display: grid;
     }
 

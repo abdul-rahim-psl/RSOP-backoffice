@@ -496,10 +496,6 @@
     transform 0.15s;
 }
 
-.node[data-origin='doc'] .nbox {
-  border-style: dashed;
-}
-
 .node[data-round] .nbox {
   border-radius: 50%;
   border-width: 5px;

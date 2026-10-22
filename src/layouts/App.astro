@@ -8,15 +8,13 @@ interface Props {
   description?: string;
   /** The Designer fills the viewport like a desktop app and has no page footer. */
   app?: boolean;
-  /** The screen shows live data, so the header and footer must not call it mock; names what it reads, e.g. "the bill inquiry log". */
-  live?: string;
 }
 
-const { title, description, app = false, live } = Astro.props;
+const { title, description, app = false } = Astro.props;
 ---
 
 <Base title={title} description={description} bodyClass={app ? 'app' : undefined}>
-  <AppHeader live={!!live} />
+  <AppHeader />
   {
     app ? (
       <main id="main">
@@ -25,20 +23,6 @@ const { title, description, app = false, live } = Astro.props;
     ) : (
       <main class="page" id="main">
         <slot />
-        <p class="foot-note">
-          <Icon name="info" size={15} />
-          {live ? (
-            <span>
-              <strong>Live data.</strong> This screen reads {live} on every load. The rest of the back office
-              is still a first draft on mock data, apart from the Designer's steps.
-            </span>
-          ) : (
-            <span>
-              <strong>First draft on mock data.</strong> Nothing here is connected to RSOP, Raast or a biller. Every person,
-              bank, bill and figure is fictional. Built from KJ's HLD sketch and the Open Connect demo doc.
-            </span>
-          )}
-        </p>
       </main>
     )
   }

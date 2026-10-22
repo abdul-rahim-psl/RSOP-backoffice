@@ -39,7 +39,7 @@ const lanes = flow.lanes.map((lane, i) => ({
     .sort((a, b) => a.node.col * 10 + rowRank[a.node.row] - (b.node.col * 10 + rowRank[b.node.row])),
 }));
 
-const name = (n: FlowNode) => `${n.label}${n.sub ? `, ${n.sub}` : ''}${n.origin === 'doc' ? ', added from the doc' : ''}`;
+const name = (n: FlowNode) => `${n.label}${n.sub ? `, ${n.sub}` : ''}`;
 /** What leaves a step, for screen readers: the full message where the API names one. */
 const leads = (n: FlowNode) =>
   flow.edges
@@ -59,7 +59,7 @@ const pill = src.live
   <div class="toolbar">
     <div class="tb-title">
       <h2 id="canvas-h" class="tb-flow">{flow.name}</h2>
-      <span class="pill" data-tone="wait">{flow.version}</span>
+      <span class="pill" data-tone="info">{flow.version}</span>
       <span class="pill" data-tone={pill.tone} data-source={src.live ? 'live' : 'snapshot'} title={pill.about}>
         {pill.text}
         <span class="sr-only">: {pill.about}</span>

@@ -10,6 +10,14 @@ whenReady('[data-log]', (log) => {
   const search = log.querySelector<HTMLInputElement>('[data-search]')!;
   const empty = log.querySelector<HTMLElement>('[data-empty]')!;
   const status = log.querySelector<HTMLElement>('[data-log-status]')!;
+  const pager = log.querySelector<HTMLElement>('[data-pager]')!;
+  const pagerSum = log.querySelector<HTMLElement>('[data-pager-sum]')!;
+  const pagerPages = log.querySelector<HTMLElement>('[data-pager-pages]')!;
+  const [prevPage, nextPage] = [...log.querySelectorAll<HTMLButtonElement>('[data-page-step]')];
+  /** Rows a page; the chips and search pick the rows, the pager splits them. */
+  const PAGE = 10;
+  let page = 0;
+  let matching: HTMLTableRowElement[] = [];
   const body = drawer.querySelector<HTMLElement>('[data-drawer-body]')!;
   const copyStatus = drawer.querySelector<HTMLElement>('[data-copy-status]')!;
   const [newer, older] = [...drawer.querySelectorAll<HTMLButtonElement>('[data-step]')];
@@ -23,7 +31,8 @@ whenReady('[data-log]', (log) => {
 
   const card = (id: string) => document.getElementById(`${anchor}-${id}`);
   const rowOf = (id: string | null) => rows.find((r) => r.dataset.id === id);
-  const shown = () => rows.filter((r) => !r.hidden);
+  const shown = () => matching;
+  const pageCount = () => Math.max(1, Math.ceil(matching.length / PAGE));
 
   const syncUrl = () => {
     const url = new URL(location.href);
@@ -32,23 +41,73 @@ whenReady('[data-log]', (log) => {
     const q = search.value.trim();
     if (q) url.searchParams.set('q', q);
     else url.searchParams.delete('q');
+    if (page > 0) url.searchParams.set('page', String(page + 1));
+    else url.searchParams.delete('page');
     url.hash = openId ? `${anchor}-${openId}` : '';
     history.replaceState(null, '', url);
   };
 
-  const apply = (announce = true) => {
-    const q = search.value.trim().toLowerCase();
-    chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.show === show)));
-    let n = 0;
-    for (const r of rows) {
-      const on = (show === 'all' || r.dataset.show === show) && (!q || (r.dataset.text ?? '').includes(q));
-      r.hidden = !on;
-      if (on) n++;
-    }
-    empty.hidden = n > 0;
-    if (announce) status.textContent = `Showing ${n} of ${rows.length} ${many}`;
+  /** Page numbers to offer: all of them when few, else the ends and the current page's neighbours. */
+  const pageList = (n: number, cur: number): (number | null)[] => {
+    if (n <= 7) return Array.from({ length: n }, (_, i) => i);
+    const keep = [...new Set([0, cur - 1, cur, cur + 1, n - 1])].filter((i) => i >= 0 && i < n).sort((a, b) => a - b);
+    return keep.flatMap((i, k) => (k && i - keep[k - 1]! > 1 ? [null, i] : [i]));
+  };
+
+  /** Shows the current page of the matching rows and redraws the pager. */
+  const render = () => {
+    page = Math.min(Math.max(0, page), pageCount() - 1);
+    const from = page * PAGE;
+    const onPage = new Set(matching.slice(from, from + PAGE));
+    for (const r of rows) r.hidden = !onPage.has(r);
+    empty.hidden = matching.length > 0;
+    pager.hidden = matching.length <= PAGE;
+    pagerSum.textContent = `Showing ${from + 1}–${Math.min(from + PAGE, matching.length)} of ${matching.length} ${many}`;
+    pagerPages.replaceChildren(
+      ...pageList(pageCount(), page).map((i) => {
+        if (i === null) {
+          const gap = document.createElement('span');
+          gap.className = 'gap';
+          gap.textContent = '…';
+          return gap;
+        }
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'chip';
+        b.dataset.page = String(i);
+        b.textContent = String(i + 1);
+        b.setAttribute('aria-label', `Page ${i + 1}`);
+        if (i === page) b.setAttribute('aria-current', 'page');
+        return b;
+      }),
+    );
+    prevPage.disabled = page === 0;
+    nextPage.disabled = page >= pageCount() - 1;
     syncUrl();
   };
+
+  /** Re-applies the chips and search; a new filter starts again from the first page. */
+  const apply = (announce = true, keepPage = false) => {
+    const q = search.value.trim().toLowerCase();
+    chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.show === show)));
+    matching = rows.filter((r) => (show === 'all' || r.dataset.show === show) && (!q || (r.dataset.text ?? '').includes(q)));
+    if (!keepPage) page = 0;
+    render();
+    if (announce) status.textContent = `${matching.length} of ${rows.length} ${many} match`;
+  };
+
+  const goTo = (next: number) => {
+    page = next;
+    render();
+    log.querySelector('.table-wrap')?.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  };
+  pager.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const num = t.closest<HTMLButtonElement>('[data-page]');
+    if (num) return goTo(Number(num.dataset.page));
+    const step = t.closest<HTMLButtonElement>('[data-page-step]');
+    if (step && !step.disabled) goTo(page + Number(step.dataset.pageStep));
+  });
 
   const steps = () => {
     const list = shown();
@@ -60,6 +119,12 @@ whenReady('[data-log]', (log) => {
   const open = (id: string) => {
     const next = card(id);
     if (!next) return;
+    // A row on another page of the matching rows brings that page up behind the drawer.
+    const at = matching.findIndex((r) => r.dataset.id === id);
+    if (at >= 0 && Math.floor(at / PAGE) !== page) {
+      page = Math.floor(at / PAGE);
+      render();
+    }
     if (openId && openId !== id) {
       const prev = card(openId);
       if (prev) homes.get(openId)?.append(prev);
@@ -169,7 +234,8 @@ whenReady('[data-log]', (log) => {
   const wanted = params.get('show');
   if (wanted && outcomes.includes(wanted)) show = wanted;
   search.value = params.get('q') ?? '';
+  page = Math.max(0, (Number(params.get('page')) || 1) - 1);
   const hashId = location.hash.match(new RegExp(`^#${anchor}-(\\d+)$`))?.[1];
-  apply(false);
+  apply(false, true);
   if (hashId && card(hashId)) open(hashId);
 });

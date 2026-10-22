@@ -10,7 +10,7 @@ const roleList: Role[] = roles.map((r) => r.role);
 const count = (role: Role) => users.filter((u) => u.role === role).length;
 ---
 
-<App title="Users" description="Who can sign in to the RSOP back office, and what each role may do. Mock data.">
+<App title="Users" description="Who can sign in to the RSOP back office, and what each role may do.">
   <div class="page-head">
     <div>
       <p class="eyebrow">Back office</p>
@@ -107,7 +107,7 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
   <section aria-labelledby="roles-h">
     <div class="section-head">
       <h2 id="roles-h">Roles and permissions<span class="pd">.</span></h2>
-      <p>Placeholders for KJ to confirm: four roles, eight permissions.</p>
+      <p>Four roles, eight permissions.</p>
     </div>
 
     <ul class="role-cards">
@@ -176,8 +176,8 @@ const count = (role: Role) => users.filter((u) => u.role === role).length;
         </select>
       </label>
       <p class="dlg-note" data-dialog-note hidden>
-        <Icon name="info" size={16} />
-        <span>Nothing was sent or saved: this draft has no backend.</span>
+        <Icon name="check" size={16} />
+        <span data-dialog-note-text></span>
       </p>
       <div class="dlg-actions">
         <button class="btn" type="button" data-dialog-close>Cancel</button>

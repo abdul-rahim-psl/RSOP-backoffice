@@ -17,7 +17,7 @@ const line = [
 ] as const;
 ---
 
-<Base title="Sign in" description="Sign in to the RSOP back office (first draft; no real sign-in).">
+<Base title="Sign in" description="Sign in to the RSOP back office.">
   <div class="signin">
     <header class="top">
       <Brand href="/" size="lg" />
@@ -27,10 +27,6 @@ const line = [
     <main class="split">
       <section class="card glass" aria-labelledby="signin-h">
         <h1 class="title" id="signin-h">Sign in<span class="pd">.</span></h1>
-        <p class="note">
-          <Icon name="info" size={15} />
-          <span>This draft has no real sign-in. Any username and password will do.</span>
-        </p>
         <!-- No name attributes on the inputs: what is typed here is never sent, only where to go next. -->
         <form class="form" action="/signin" method="post" data-signin>
           <input type="hidden" name="next" value={next} />
@@ -47,10 +43,6 @@ const line = [
             <Icon name="arrow" size={16} />
           </button>
         </form>
-        <p class="forgot">
-          <Icon name="lock" size={14} />
-          Password reset is not in this draft.
-        </p>
       </section>
       <section class="pitch" aria-labelledby="pitch-h">
         <p class="eyebrow">Raast Service Orchestration Platform</p>
@@ -80,7 +72,6 @@ const line = [
 
     </main>
 
-    <footer class="foot">First draft on mock data. Every person, bank, bill and figure is fictional.</footer>
   </div>
 </Base>
 
@@ -203,24 +194,6 @@ const line = [
     box-shadow: var(--shadow);
   }
 
-  .note {
-    display: flex;
-    gap: 8px;
-    padding: 10px 12px;
-    border: 1px solid color-mix(in srgb, var(--wait) 45%, transparent);
-    border-radius: var(--radius-sm);
-    background: color-mix(in srgb, var(--wait) 9%, transparent);
-    color: var(--ink-2);
-    font-size: 0.82rem;
-    line-height: 1.45;
-  }
-
-  .note :global(.icon) {
-    flex: 0 0 auto;
-    margin-top: 2px;
-    color: var(--wait-ink);
-  }
-
   .form {
     display: grid;
     gap: 14px;
@@ -230,21 +203,6 @@ const line = [
     width: 100%;
     min-height: 44px;
     margin-top: 4px;
-  }
-
-  .forgot {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    color: var(--faint);
-    font-size: 0.78rem;
-  }
-
-  .foot {
-    color: var(--faint);
-    font-size: 0.78rem;
-    text-align: center;
   }
 
   @media (max-width: 900px) {

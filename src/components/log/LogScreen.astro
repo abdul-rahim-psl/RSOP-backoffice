@@ -13,7 +13,7 @@ interface Props {
 const kind = logs[Astro.props.log];
 ---
 
-<App title={kind.title} description={`Every bill ${kind.one} the log recorded, live, with what came back. For back-office admins.`} live={`the bill ${kind.one} log`}>
+<App title={kind.title} description={`Every bill ${kind.one} the log recorded, live, with what came back. For back-office admins.`}>
   <LogBody server:defer log={kind.id}>
     <Loading
       slot="fallback"

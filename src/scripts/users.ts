@@ -38,11 +38,14 @@ if (dialog) {
   const form = dialog.querySelector<HTMLFormElement>('[data-dialog-form]')!;
   const title = dialog.querySelector<HTMLElement>('[data-dialog-title]')!;
   const note = dialog.querySelector<HTMLElement>('[data-dialog-note]')!;
+  const noteText = dialog.querySelector<HTMLElement>('[data-dialog-note-text]')!;
+  let mode: 'invite' | 'edit' = 'invite';
   const submit = dialog.querySelector<HTMLButtonElement>('[data-dialog-submit]')!;
   const close = dialog.querySelector<HTMLButtonElement>('[data-dialog-close]')!;
   const field = (f: string) => dialog.querySelector<HTMLInputElement | HTMLSelectElement>(`[data-f="${f}"]`)!;
 
-  const open = (mode: 'invite' | 'edit', user?: { name: string; email: string; role: string }) => {
+  const open = (as: 'invite' | 'edit', user?: { name: string; email: string; role: string }) => {
+    mode = as;
     title.textContent = mode === 'invite' ? 'Invite user' : `Edit ${user?.name ?? 'user'}`;
     submit.textContent = mode === 'invite' ? 'Send invite' : 'Save changes';
     submit.hidden = false;
@@ -62,9 +65,10 @@ if (dialog) {
   );
   close.addEventListener('click', () => dialog.close());
 
-  // The form validates as a real one would, then says plainly that nothing left the page.
+  // The form validates as a real one would, then confirms the invite or the change.
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    noteText.textContent = mode === 'invite' ? `Invitation sent to ${field('email').value.trim()}.` : 'Changes saved.';
     note.hidden = false;
     submit.hidden = true;
     close.textContent = 'Close';

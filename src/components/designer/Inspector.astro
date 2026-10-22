@@ -50,9 +50,6 @@ const pieces = (chain: string, self: string) =>
           <h3>{n.label}</h3>
           {n.sub && <p class:list={{ mono: !!n.service }}>{n.sub}</p>}
         </div>
-        <span class="origin" data-origin={n.origin}>
-          {n.origin === 'api' ? 'From the API' : 'From the doc'}
-        </span>
       </header>
     ))
   }
@@ -112,10 +109,6 @@ const pieces = (chain: string, self: string) =>
               </span>
             </p>
           )}
-          <p class="placeholder">
-            <Icon name="info" size={14} />
-            Placeholder values for the draft; no real configuration exists yet.
-          </p>
           <YamlBlock value={n.params} label={`${n.label} parameters`} copy />
         </section>
       ))

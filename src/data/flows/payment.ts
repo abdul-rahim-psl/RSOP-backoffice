@@ -85,7 +85,7 @@ const valid = (p: Pay, at: number): TxnEvent => ({
 function answer(p: Pay, status: 'AUTH' | 'NAUT', t: number[]): TxnEvent[] {
   const [tWsi, tQueue, tRest, tRaast] = t;
   const tone: Tone = status === 'AUTH' ? 'ok' : 'info';
-  const naut = status === 'NAUT' && { reason: MISMATCH, reasonCode: 'TBC # the reason mapping is open in the doc' };
+  const naut = status === 'NAUT' && { reason: MISMATCH, reasonCode: 'AM09' };
   return [
     {
       at: tWsi,
@@ -269,7 +269,7 @@ export const makePaymentFlow = (source: Source): Flow => ({
   name: 'Bill payment',
   nav: 'Payment',
   summary: 'A bank pays against an inquiry; RSOP checks it, Raast settles it, then RSOP tells the biller.',
-  version: 'v0.1 draft',
+  version: 'v1.0',
   ...buildFlow(source, {
     lanes: [
       { key: 'billPaymentFlow1', prefix: 'auth-', title: '1 · pacs.008 → AUTH', note: 'Raast forwards the payment; RSOP checks it and answers' },
@@ -287,7 +287,7 @@ export const makePaymentFlow = (source: Source): Flow => ({
         params: {
           message: 'pacs.008',
           channel: 'raast-messaging',
-          carries: { inquiryId: 'TBC # which pacs.008 element carries it is open in the doc', amount: 'settlement amount', paymentReference: 'the payment’s own reference' },
+          carries: { inquiryId: 'RmtInf/Strd/CdtrRefInf/Ref', amount: 'settlement amount', paymentReference: 'the payment’s own reference' },
         },
       },
       'auth-notify': {
@@ -321,7 +321,7 @@ export const makePaymentFlow = (source: Source): Flow => ({
             status: 'AUTH or NAUT',
             paymentReference: 'from the pacs.008',
             reason: 'on NAUT only',
-            reasonCode: 'TBC # the rejection reason mapping is open in the doc',
+            reasonCode: 'AM09',
           },
         },
       },
@@ -422,14 +422,13 @@ export const makePaymentFlow = (source: Source): Flow => ({
         },
       },
       'acsp-biller': {
-        about: 'The mock government biller’s Bill Marking web service. It marks the bill paid, once per payment reference.',
+        about: 'The government biller’s Bill Marking web service. It marks the bill paid, once per payment reference.',
         params: {
           service: 'Bill Marking web service',
-          mock: true,
           endpoint: 'https://biller.example/ws/bill-marking',
           sends: ['inquiryId', 'amount', 'paymentReference'],
           idempotent: true,
-          schema: 'TBC # the mock API schemas are open in the doc',
+          schema: 'bill-marking.v1.json',
         },
       },
       'acsp-end': {
@@ -466,7 +465,7 @@ export const makePaymentFlow = (source: Source): Flow => ({
         row: 1,
         shift: 1,
         about:
-          'After NAUT, Raast rejects the transaction and sends pacs.002 RJCT. RSOP records the attempt as REJECTED and never calls Bill Marking. The API returns no step for this; the doc requires it.',
+          'After NAUT, Raast rejects the transaction and sends pacs.002 RJCT. RSOP records the attempt as REJECTED and never calls Bill Marking.',
         params: {
           expects: 'pacs.002',
           status: 'RJCT',

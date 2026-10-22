@@ -253,6 +253,22 @@ const searchText = (q: LogEntry) =>
             </tbody>
           </table>
         </div>
+
+        {/* Ten rows a page, over whatever the chips and search let through; bill-log.ts fills and drives it. */}
+        <nav class="pager" aria-label={`${kind.Many} pages`} data-pager hidden>
+          <p class="pager-sum" aria-live="polite" data-pager-sum></p>
+          <div class="pager-btns">
+            <button class="chip pager-step" type="button" data-page-step="-1" aria-label="Previous page">
+              <Icon name="prev" size={14} />
+              Previous
+            </button>
+            <span class="pager-pages" data-pager-pages></span>
+            <button class="chip pager-step" type="button" data-page-step="1" aria-label="Next page">
+              Next
+              <Icon name="next" size={14} />
+            </button>
+          </div>
+        </nav>
         {list.length > SHOWN && (
           <p class="chart-note">
             Showing the newest {int(SHOWN)} of {int(list.length)}; the figures above count all of them.
@@ -609,6 +625,56 @@ const searchText = (q: LogEntry) =>
     color: var(--select);
     font-weight: 800;
     cursor: pointer;
+  }
+
+  .pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin-top: 14px;
+  }
+
+  .pager[hidden] {
+    display: none;
+  }
+
+  .pager-sum {
+    color: var(--mut);
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .pager-btns,
+  .pager-pages {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pager-pages :global(.chip) {
+    min-width: 34px;
+    justify-content: center;
+    padding: 4px 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pager-pages :global(.chip[aria-current='page']) {
+    color: var(--ink);
+    border-color: var(--stroke-strong);
+    background: var(--raised);
+  }
+
+  .pager-pages :global(.gap) {
+    color: var(--faint);
+    padding: 0 2px;
+  }
+
+  .pager-step:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .chart-note {

@@ -22,7 +22,7 @@ A first-draft UI for the RSOP back office, built from KJ's HLD sketch ([pics/](p
 | `/` | Sign in: any username and password will do. Every other screen needs the session it starts: without one, `src/middleware.ts` sends you here and back afterwards. **Log out** in the header ends it |
 | `/dashboard/` | Bill-pay activity, **live**: today's counts from both logs (bills paid, inquiries, payments, reply times), needs-attention tiles, payments and inquiries per hour, the inquiry-to-paid funnel, what didn't come back SUCCESS, and the latest entries. No amounts: the logs don't carry them |
 | `/inquiries/` | Bill inquiries, **live**: every inquiry the log API recorded, with result, reply time and caller; a drawer per inquiry with IDs, participants and headers. Shown to the Admin role |
-| `/payments/` | Bill payments, **live**: the same screen over the payment log, with "Paid" for SUCCESS. Shown to the Admin role |
+| `/payments/` | Bill payments, **live**: the same screen over the payment log, with "Paid" for SUCCESS. Shown to the Admin role. Both log tables page in the browser, 10 rows a page over the chips and search (`?page=` in the URL) |
 | `/designer/inquiry/` | RSOP Designer, Inquiry flow: the API's chain, which is KJ's pipeline plus the gateway; YAML params; one sample transaction, "FBR", on a timeline |
 | `/designer/payment/` | RSOP Designer, Payment flow: the API's two chains (pacs.008 → AUTH, then ACSP → bill marking), plus the doc's inquiry store and Rejected steps |
 | `/users/` | Users, search and role filter, roles and permissions, invite and edit dialog (sends nothing) |

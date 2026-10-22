@@ -9,7 +9,7 @@ export const prerender = false;
 Astro.response.headers.set('Cache-Control', 'no-store');
 ---
 
-<App title="Dashboard" description="Bill-pay activity for the RSOP back office, counted live from the bill inquiry and payment logs." live="the bill inquiry and payment logs">
+<App title="Dashboard" description="Bill-pay activity for the RSOP back office, counted live from the bill inquiry and payment logs.">
   <DashboardBody server:defer>
     <Loading
       slot="fallback"
