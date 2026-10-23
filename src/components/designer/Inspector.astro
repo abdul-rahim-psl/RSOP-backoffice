@@ -14,6 +14,7 @@ const icons: Record<NodeKind, IconName> = {
   start: 'flag',
   end: 'flag',
   party: 'raast',
+  channel: 'users',
   inbound: 'inbound',
   notify: 'mail',
   wsi: 'wsi',
@@ -26,8 +27,8 @@ const icons: Record<NodeKind, IconName> = {
   service: 'more',
 };
 const on = (id: string) => (id === defaultNode ? '' : undefined);
-/** Raast and the biller sit outside RSOP, so only their description is shown. */
-const aboutOnly = (n: Flow['nodes'][number]) => n.kind === 'party' || n.kind === 'biller';
+/** Systems outside RSOP (Raast, the channel, billers, core banking) show only their description. */
+const aboutOnly = (n: Flow['nodes'][number]) => n.kind === 'party' || n.kind === 'channel' || n.kind === 'biller';
 ---
 
 <aside class="inspector" id="inspector" aria-labelledby="insp-h">
@@ -53,7 +54,7 @@ const aboutOnly = (n: Flow['nodes'][number]) => n.kind === 'party' || n.kind ===
         <section class="insp-sec" data-node={n.id} data-on={on(n.id)}>
           <h3 class="nojs-only">{n.label}</h3>
           <p class="about">{n.about}</p>
-          {!aboutOnly(n) && (
+          {!aboutOnly(n) && n.params !== null && (
             <>
               <h4 class="fg-title">Parameters</h4>
               <YamlBlock value={n.params} label={`${n.label} parameters`} copy />

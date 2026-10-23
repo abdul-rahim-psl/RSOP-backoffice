@@ -17,6 +17,7 @@ const icons: Record<NodeKind, IconName | null> = {
   start: null,
   end: null,
   party: 'raast',
+  channel: 'users',
   inbound: 'inbound',
   notify: 'mail',
   wsi: 'wsi',
@@ -49,7 +50,9 @@ const leads = (n: FlowNode) =>
 const src = flow.source;
 const fetched = pkt(src.fetchedAt);
 // Live: fetched for this page load. Otherwise the snapshot, and, when the API failed, why.
-const pill = src.live
+const pill = src.static
+  ? { tone: 'info', text: 'Static definition', about: 'steps defined in this back office; RSOP’s flow API does not serve this flow yet' }
+  : src.live
   ? { tone: 'ok', text: `RSOP API · live ${pktTime(src.fetchedAt)}`, about: `steps fetched from ${src.baseUrl} for this page at ${fetched} PKT` }
   : src.error
     ? { tone: 'wait', text: `API unreachable · snapshot ${pkt(src.fetchedAt, true)}`, about: `RSOP's flow API could not be used (${src.error}), so the steps come from the snapshot of ${src.baseUrl} pulled ${fetched} PKT` }

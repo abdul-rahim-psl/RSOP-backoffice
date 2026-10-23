@@ -34,7 +34,8 @@ export interface Chain {
 }
 
 const ARROW = /(<-->|-->)/;
-const SERVICE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+// Capitals allowed: the API names some systems in upper case ("CAS").
+const SERVICE = /^[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*$/;
 const MESSAGE = /^([A-Za-z]+) ([A-Za-z0-9 ]+)$/;
 
 /** "PACS008" → "pacs.008", as the rest of the UI writes it. */

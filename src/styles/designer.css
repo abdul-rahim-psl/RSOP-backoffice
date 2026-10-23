@@ -445,12 +445,13 @@
   background: var(--viz-o5);
 }
 
-/* Raast, where every flow enters, shares Start's light-blue fill. */
-.designer .node[data-kind='party'] .nbox {
+/* Systems a flow enters from (Raast, the channel) share Start's light-blue fill. */
+.designer .node[data-kind='party'] .nbox,
+.designer .node[data-kind='channel'] .nbox {
   background: var(--viz-o5);
 }
 
-/* The biller and End, where every flow finishes, share a light-green fill. */
+/* Systems a flow finishes at (billers, core banking) and End share a light-green fill. */
 .designer .node[data-kind='biller'] .nbox,
 .designer .node[data-kind='end'] .nbox {
   background: color-mix(in srgb, var(--ok) 40%, var(--panel));

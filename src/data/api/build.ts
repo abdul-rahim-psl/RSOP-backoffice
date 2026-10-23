@@ -2,7 +2,7 @@
 import { excerpt, parseChain, type Message } from '../../lib/chain.ts';
 import type { Flow, FlowEdge, FlowNode, Lane } from '../../lib/flow.ts';
 import type { Yaml } from '../../lib/yaml.ts';
-import { ENDPOINTS, type Snapshot, type Source } from './endpoints.ts';
+import type { Snapshot, Source } from './endpoints.ts';
 import { services } from './services.ts';
 import raw from './snapshot.json' with { type: 'json' };
 
@@ -47,8 +47,8 @@ export interface FlowSpec {
 export type BuiltFlow = Pick<Flow, 'lanes' | 'source' | 'nodes' | 'edges' | 'gaps'>;
 
 function chainFor(source: Source, key: string) {
-  for (const endpoint of ENDPOINTS) {
-    const chain = source.responses[endpoint]?.[key];
+  for (const [endpoint, chains] of Object.entries(source.responses)) {
+    const chain = chains[key];
     if (chain !== undefined) return { endpoint, chain };
   }
   return null;
@@ -123,7 +123,13 @@ export function buildFlow(source: Source, spec: FlowSpec): BuiltFlow {
 
   return {
     lanes: spec.lanes.map(({ key, title, note }) => ({ key, title, note })),
-    source: { baseUrl: source.baseUrl, fetchedAt: source.fetchedAt, live: source.live, ...(source.error && { error: source.error }) },
+    source: {
+      baseUrl: source.baseUrl,
+      fetchedAt: source.fetchedAt,
+      live: source.live,
+      ...(source.error && { error: source.error }),
+      ...(source.static && { static: true }),
+    },
     nodes,
     edges,
     gaps,

@@ -1,15 +1,16 @@
 import type { Flow } from '../../lib/flow.ts';
 import { NO_CHAIN, snapshotSource } from '../api/build.ts';
 import type { Source } from '../api/endpoints.ts';
+import { hardcodedFlows } from './hardcoded.ts';
 import { inquiryFlow, makeInquiryFlow } from './inquiry.ts';
 import { makePaymentFlow, paymentFlow } from './payment.ts';
 
-/** From the committed snapshot, in the order the sketch lists them under "Transaction Flows". */
-export const flows: Flow[] = [inquiryFlow, paymentFlow];
+/** From the committed snapshot, in the order the sketch lists them under "Transaction Flows", then the hard-coded ones. */
+export const flows: Flow[] = [inquiryFlow, paymentFlow, ...hardcodedFlows];
 
-/** Both flows from one API answer. If the answer lacks a chain a flow needs, both fall back to the snapshot and say why. */
+/** Every flow, the API's from one answer. If the answer lacks a chain an API flow needs, both fall back to the snapshot and say why. */
 export function flowsFrom(source: Source): Flow[] {
   const built = [makeInquiryFlow(source), makePaymentFlow(source)];
   const missing = built.flatMap((f) => f.gaps).find((g) => g.startsWith(NO_CHAIN));
-  return missing && source.live ? flowsFrom({ ...snapshotSource, error: missing }) : built;
+  return missing && source.live ? flowsFrom({ ...snapshotSource, error: missing }) : [...built, ...hardcodedFlows];
 }

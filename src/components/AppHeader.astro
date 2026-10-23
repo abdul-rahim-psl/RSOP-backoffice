@@ -7,8 +7,8 @@ import { can, INQUIRY_LOG, initials, me, PAYMENT_LOG } from '../data/users';
 const path = Astro.url.pathname;
 const links: { href: string; match: string; label: string; icon: IconName }[] = [
   { href: '/dashboard/', match: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  ...(can(me.role, INQUIRY_LOG) ? [{ href: '/inquiries/', match: '/inquiries', label: 'Bill Inquiries', icon: 'inbound' as const }] : []),
-  ...(can(me.role, PAYMENT_LOG) ? [{ href: '/payments/', match: '/payments', label: 'Bill Payments', icon: 'outbound' as const }] : []),
+  ...(can(me.role, INQUIRY_LOG) ? [{ href: '/inquiries/', match: '/inquiries', label: 'Inquiries', icon: 'inbound' as const }] : []),
+  ...(can(me.role, PAYMENT_LOG) ? [{ href: '/payments/', match: '/payments', label: 'Payments', icon: 'outbound' as const }] : []),
   { href: '/designer/inquiry/', match: '/designer', label: 'Flow Designer', icon: 'designer' },
   { href: '/users/', match: '/users', label: 'User Management', icon: 'users' },
 ];

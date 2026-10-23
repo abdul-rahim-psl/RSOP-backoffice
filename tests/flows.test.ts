@@ -4,6 +4,7 @@ import { parseChain } from '../src/lib/chain.ts';
 import { isRound, layout, mainLine, nodeById, problems, statesAt, type Flow, type Txn } from '../src/lib/flow.ts';
 import type { Yaml } from '../src/lib/yaml.ts';
 import { snapshot } from '../src/data/api/build.ts';
+import { TALHA_BHAI_API } from '../src/data/api/talha-bhai-api.ts';
 import { services } from '../src/data/api/services.ts';
 import { flows } from '../src/data/flows/index.ts';
 import { inquiryFlow } from '../src/data/flows/inquiry.ts';
@@ -28,7 +29,7 @@ function find(data: Yaml | undefined, key: string): Yaml | undefined {
 
 const nodesOf = (t: Txn) => t.events.map((e) => e.node);
 
-test('both flows are sound graphs with well-formed transactions', () => {
+test('every flow is a sound graph with well-formed transactions', () => {
   for (const flow of flows) assert.deepEqual(problems(flow), [], flow.id);
 });
 
@@ -46,8 +47,8 @@ test('the inquiry keeps the sketch’s blocks in the sketch’s order, with only
   assert.equal(inquiryFlow.edges.find((e) => e.to === 'biller')?.label, 'WS');
 });
 
-test('each lane’s steps are exactly its chain from the API snapshot', () => {
-  const chains = Object.assign({}, ...Object.values(snapshot.responses)) as Record<string, string>;
+test('each lane’s steps are exactly its chain, from the API snapshot or the hard-coded file', () => {
+  const chains = Object.assign({}, ...Object.values(snapshot.responses), TALHA_BHAI_API) as Record<string, string>;
   for (const flow of flows) {
     const byId = nodeById(flow);
     flow.lanes.forEach((lane, i) => {
@@ -58,8 +59,8 @@ test('each lane’s steps are exactly its chain from the API snapshot', () => {
   }
 });
 
-test('every service in the API snapshot has a registry entry', () => {
-  for (const response of Object.values(snapshot.responses)) {
+test('every service in the API snapshot and the hard-coded file has a registry entry', () => {
+  for (const response of [...Object.values(snapshot.responses), TALHA_BHAI_API]) {
     for (const [key, chain] of Object.entries(response)) {
       for (const s of parseChain(chain).steps) if (s.kind === 'service') assert.ok(services[s.name], `${key}: ${s.name}`);
     }

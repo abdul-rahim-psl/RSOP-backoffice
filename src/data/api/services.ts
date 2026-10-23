@@ -27,4 +27,11 @@ export const services: Record<string, Service> = {
   'receiving-service': { id: 'receive', label: 'Receiving', kind: 'inbound', family: 'rsop' },
   'saf-dispatcher': { id: 'saf-dispatch', label: 'SAF dispatcher', kind: 'saf', family: 'store' },
   'saf-consumer': { id: 'saf-consume', label: 'SAF consumer', kind: 'rest', family: 'outbound' },
+  // Services of the hard-coded flows in talha-bhai-api.ts. Exit systems reuse the biller's kind.
+  channel: { id: 'channel', label: 'Channel', kind: 'channel', family: 'raast' },
+  'cas-service': { id: 'cas', label: 'CAS service', kind: 'inbound', family: 'rsop' },
+  'mpg-incoming-title-fetch': { id: 'incoming', label: 'Incoming Title Fetch', kind: 'inbound', family: 'raast' },
+  cbs: { id: 'cbs', label: 'Core banking', kind: 'biller', family: 'biller' },
+  'acquiring-system': { id: 'acquirer', label: 'Acquiring system', kind: 'biller', family: 'biller' },
+  CAS: { id: 'cas-directory', label: 'CAS', kind: 'biller', family: 'biller' },
 };

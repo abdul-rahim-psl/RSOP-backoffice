@@ -13,11 +13,13 @@ export interface Snapshot {
   /** ISO time of the pull that last changed a chain. */
   fetchedAt: string;
   /** The API's responses, verbatim, so a parser change never needs a new pull. */
-  responses: Record<Endpoint, Record<string, string>>;
+  responses: Record<string, Record<string, string>>;
 }
 
 /** What a flow is drawn from: a fresh API answer (`live`), or the snapshot with the reason the API could not be used. */
 export interface Source extends Snapshot {
   live: boolean;
   error?: string;
+  /** Hard-coded in this back office, not served by the API. */
+  static?: boolean;
 }

@@ -19,14 +19,14 @@ test('a live answer draws the same flows as the snapshot when the chains match',
     drawn.map((f) => f.nodes.map((n) => n.id)),
     flows.map((f) => f.nodes.map((n) => n.id)),
   );
-  assert.ok(drawn.every((f) => f.source.live && f.source.fetchedAt === live.fetchedAt));
+  assert.ok(drawn.filter((f) => !f.source.static).every((f) => f.source.live && f.source.fetchedAt === live.fetchedAt));
 });
 
 test('a live answer missing a chain falls back to the snapshot, naming the chain', () => {
   const { billPaymentFlow2: _gone, ...rest } = snapshot.responses['/api/v1/billPaymentFlow'];
   const live: Source = { ...snapshot, live: true, responses: { ...snapshot.responses, '/api/v1/billPaymentFlow': rest } };
   const drawn = flowsFrom(live);
-  assert.ok(drawn.every((f) => !f.source.live && /billPaymentFlow2/.test(f.source.error ?? '')));
+  assert.ok(drawn.filter((f) => !f.source.static).every((f) => !f.source.live && /billPaymentFlow2/.test(f.source.error ?? '')));
   assert.deepEqual(drawn[1].nodes.length, flows[1].nodes.length);
 });
 

@@ -7,6 +7,7 @@ export type NodeKind =
   | 'start'
   | 'end'
   | 'party'
+  | 'channel'
   | 'inbound'
   | 'notify'
   | 'wsi'
@@ -100,14 +101,15 @@ export interface Lane {
 }
 
 export interface Flow {
-  id: 'inquiry' | 'payment';
+  /** The URL segment: /designer/<id>/. */
+  id: string;
   name: string;
   nav: string;
   summary: string;
   version: string;
   lanes: Lane[];
   /** Where the steps came from: a live API answer, or the snapshot and why the API could not be used. */
-  source: { baseUrl: string; fetchedAt: string; live: boolean; error?: string };
+  source: { baseUrl: string; fetchedAt: string; live: boolean; error?: string; static?: boolean };
   nodes: FlowNode[];
   edges: FlowEdge[];
   txns: Txn[];

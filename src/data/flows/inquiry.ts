@@ -147,7 +147,7 @@ function replyLeg(o: { ref: string; code: string; billRef: string; type: string;
 export const makeInquiryFlow = (source: Source): Flow => ({
   id: 'inquiry',
   name: 'Bill inquiry',
-  nav: 'Inquiry',
+  nav: 'Bill inquiry',
   summary: 'A bank asks what a bill costs; RSOP asks the biller, keeps the answer and returns it.',
   version: 'v1.0',
   ...buildFlow(source, {

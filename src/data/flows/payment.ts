@@ -285,7 +285,7 @@ const brokerParams = (topic: string) => ({ topic, durable: true, consumers: ['re
 export const makePaymentFlow = (source: Source): Flow => ({
   id: 'payment',
   name: 'Bill payment',
-  nav: 'Payment',
+  nav: 'Bill payment',
   summary: 'A bank pays against an inquiry; RSOP checks it, Raast settles it, then RSOP tells the biller.',
   version: 'v1.0',
   ...buildFlow(source, {
