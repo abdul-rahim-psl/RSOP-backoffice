@@ -320,7 +320,7 @@
 }
 
 /* Dim the parts, not the group: Chrome drops a haloed label inside a translucent <g>. */
-.designer[data-has-txn] .edge:not([data-crossed]) > * {
+.designer[data-has-txn] .edge:not([data-crossed]):not([data-from-start]) > * {
   opacity: 0.4;
 }
 
@@ -334,6 +334,15 @@
 
 .designer .edge[data-crossed] .edge-label {
   fill: var(--ink-2);
+}
+
+/* Start's first link stays light blue and undimmed: no transaction stops at Start. */
+.designer .edge[data-from-start] .edge-line {
+  stroke: var(--viz-o4);
+}
+
+.designer .edge[data-from-start] .edge-arrow {
+  fill: var(--viz-o4);
 }
 
 .designer .edge[data-active] .edge-line {
@@ -433,6 +442,18 @@
 
 .designer .node[data-kind='start'] .nbox {
   border: 2px solid var(--ok);
+  background: var(--viz-o5);
+}
+
+/* Raast, where every flow enters, shares Start's light-blue fill. */
+.designer .node[data-kind='party'] .nbox {
+  background: var(--viz-o5);
+}
+
+/* The biller and End, where every flow finishes, share a light-green fill. */
+.designer .node[data-kind='biller'] .nbox,
+.designer .node[data-kind='end'] .nbox {
+  background: color-mix(in srgb, var(--ok) 40%, var(--panel));
 }
 
 .designer .node[data-kind='end'] .nbox {

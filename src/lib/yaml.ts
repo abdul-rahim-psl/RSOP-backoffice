@@ -37,7 +37,9 @@ function scalar(v: Scalar): Tok[] {
   const at = v.lastIndexOf(COMMENT);
   const text = at >= 0 ? v.slice(0, at) : v;
   const note = at >= 0 ? v.slice(at + COMMENT.length) : '';
-  const toks: Tok[] = text ? [{ k: 'str', v: quote(text) }] : [];
+  // A number can carry a note too (`60 # Seconds`), and stays a number.
+  const num = !!note && /^-?\d+(\.\d+)?$/.test(text);
+  const toks: Tok[] = text ? [num ? { k: 'num', v: text } : { k: 'str', v: quote(text) }] : [];
   if (note) toks.push({ k: 'comment', v: `${toks.length ? ' ' : ''}# ${note}` });
   return toks;
 }

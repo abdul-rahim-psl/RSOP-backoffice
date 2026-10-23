@@ -254,12 +254,30 @@ function marked(p: Pay, t: number[], retried: boolean): TxnEvent[] {
 
 const first: Pay = { ref: paymentRefs.first, bank: banks.demo, inquiryId: pt.inquiryId, billAmount: pt.amount, paid: pt.amount, code: pt.code };
 
-const notifyParams = (message: string, topic: string) => ({
-  fetch: { method: 'GET', message, from: 'raast' },
-  publishTo: 'notification-broker-service',
-  topic,
-  timeoutMs: 3000,
-});
+// The notification service's own config; both lanes run the same service.
+const notifyParams = {
+  service: {
+    GetMxOutPut: {
+      xFetchTimeout: 5000,
+      xFetchSize: 20,
+      url: 'https://192.168.28.2:23432/output/',
+      timeout: { read: 7000, connect: 2000 },
+    },
+    GetMxToken: {
+      tokenExpiryBufferMinutes: 2,
+      redisTokenKey: 'SBP_FNRT_AUTH_CERT_TOKEN',
+      url: 'https://192.168.28.2:23432/token',
+      username: 'ENC(••••••)',
+      password: 'ENC(••••••)',
+      timeout: { read: 15000, connect: 15000 },
+    },
+    concurrency: { maxtotal: 1100, maxperroute: 1000 },
+    mpay: { url: 'http://localhost:7033/mpg/queueforwarding/', service_get_message: 'get-mx-message' },
+    pool: 10,
+  },
+  thread: { duration: 500 },
+  timeout: { 'response-code': '100,501,502' },
+};
 
 const brokerParams = (topic: string) => ({ topic, durable: true, consumers: ['receiving-service'], deadLetter: `${topic}.dlq` });
 
@@ -292,7 +310,7 @@ export const makePaymentFlow = (source: Source): Flow => ({
       },
       'auth-notify': {
         about: 'Picks up the pacs.008 from Raast and publishes it for the receiving service. The API writes this hop as “GET PACS008”.',
-        params: notifyParams('pacs.008', 'rsop.payments.incoming'),
+        params: notifyParams,
       },
       'auth-broker': {
         about: 'Passes notifications on to the receiving service, so a burst of Raast messages queues instead of being dropped.',
@@ -379,7 +397,7 @@ export const makePaymentFlow = (source: Source): Flow => ({
       },
       'acsp-notify': {
         about: 'Picks up Raast’s pacs.002 and publishes it for the receiving service. The API writes this hop as “GET PACS002 ACSP”.',
-        params: notifyParams('pacs.002', 'rsop.payments.status'),
+        params: notifyParams,
       },
       'acsp-broker': {
         about: 'Passes status notifications on to the receiving service.',

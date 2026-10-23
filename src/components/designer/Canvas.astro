@@ -11,6 +11,7 @@ interface Props {
 const { flow } = Astro.props;
 const scene = layout(flow);
 const titled = flow.lanes.length > 1;
+const starts = new Set(flow.nodes.filter((n) => n.kind === 'start').map((n) => n.id));
 
 const icons: Record<NodeKind, IconName | null> = {
   start: null,
@@ -94,7 +95,7 @@ const pill = src.live
         <svg class="edges" width={scene.width} height={scene.height} viewBox={`0 0 ${scene.width} ${scene.height}`} aria-hidden="true">
           {
             scene.edges.map((pe) => (
-              <g class="edge" data-kind={pe.edge.kind} data-key={`${pe.edge.from}>${pe.edge.to}`}>
+              <g class="edge" data-kind={pe.edge.kind} data-key={`${pe.edge.from}>${pe.edge.to}`} data-from-start={starts.has(pe.edge.from) ? '' : undefined}>
                 {pe.edge.message && <title>{`${pe.edge.message.verb} ${pe.edge.message.text} (the API: ${pe.edge.message.raw})`}</title>}
                 <path class="edge-line" d={pe.d} />
                 {pe.arrow && <path class="edge-arrow" d={pe.arrow} />}

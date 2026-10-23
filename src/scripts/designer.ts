@@ -22,7 +22,9 @@ interface ClientFlow {
 }
 
 const PLAY_MS = 1100;
-const ZOOMS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25];
+const ZOOMS = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
+const ZOOM_MIN = ZOOMS[0];
+const ZOOM_MAX = ZOOMS[ZOOMS.length - 1];
 /** Below this the labels get too small to read, so the canvas scrolls instead. */
 const FIT_MIN = 0.7;
 const FIT_MAX = 1.1;
@@ -236,6 +238,22 @@ function init(root: HTMLElement) {
     }
   }
 
+  /** Zooms to `z`, keeping the scene point under (x, y) under the pointer. */
+  function zoomAt(z: number, x: number, y: number) {
+    const before = zoomNow();
+    const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+    if (Math.abs(next - before) < 0.001) return;
+    const r0 = stage.getBoundingClientRect();
+    const sx = (x - r0.left) / before;
+    const sy = (y - r0.top) / before;
+    state.zoom = next;
+    applyZoom();
+    // Measured after the resize, because the stage re-centres when it is smaller than the canvas.
+    const r1 = stage.getBoundingClientRect();
+    viewport.scrollLeft += r1.left + sx * next - x;
+    viewport.scrollTop += r1.top + sy * next - y;
+  }
+
   /** Keeps a step in view by scrolling the canvas only, never the page. */
   function reveal(id: string) {
     const b = nodes.find((x) => x.dataset.node === id);
@@ -276,6 +294,19 @@ function init(root: HTMLElement) {
     }),
   );
   new ResizeObserver(() => state.zoom === 'fit' && applyZoom()).observe(viewport);
+
+  // Pinch and Ctrl/⌘ + wheel zoom the canvas instead of the page; a plain wheel still scrolls.
+  viewport.addEventListener(
+    'wheel',
+    (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      // Clamped so a mouse-wheel notch and a trackpad pinch both move at a usable speed.
+      const dy = Math.max(-25, Math.min(25, e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY));
+      zoomAt(zoomNow() * Math.exp(-dy * 0.01), e.clientX, e.clientY);
+    },
+    { passive: false },
+  );
 
   all<HTMLButtonElement>('[data-copy]').forEach((b) =>
     b.addEventListener('click', async () => {
