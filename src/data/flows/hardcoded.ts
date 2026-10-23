@@ -122,7 +122,7 @@ const DEFS: FlowDef[] = [
     summary: 'A customer of another bank sends money to this bank’s customer; RSOP checks the account, answers Raast, then credits it on ACSP.',
     lanes: [
       { key: 'p2pIncoming1', prefix: 'auth-', title: '1 · pacs.008 → AUTH', note: 'Raast forwards the payment; RSOP checks the account with core banking and answers', from: 'Payer bank', until: 'Awaiting ACSP' },
-      { key: 'p2pIncoming2', prefix: 'acsp-', title: '2 · ACSP → credit', note: 'Raast settles; RSOP credits the account through store-and-forward', from: 'Raast settles' },
+      { key: 'p2pIncoming2', prefix: 'acsp-', title: '2 · ACSP → credit', note: 'Raast settles; RSOP credits the account in core banking', from: 'Raast settles' },
     ],
     txn: { ref: 'P2P-IN-20261023-000214', title: 'P2P', detail: 'PKR 2,500.00', outcome: 'Settled · credited', started: '15:41:06' },
   },
@@ -144,7 +144,7 @@ const DEFS: FlowDef[] = [
     summary: 'A customer of another bank pays this bank’s merchant; RSOP checks with the acquiring system, answers Raast, then settles on ACSP.',
     lanes: [
       { key: 'p2mIncoming1', prefix: 'auth-', title: '1 · pacs.008 → AUTH', note: 'Raast forwards the payment; RSOP checks it with the acquiring system and answers', from: 'Payer bank', until: 'Awaiting ACSP' },
-      { key: 'p2mIncoming2', prefix: 'acsp-', title: '2 · ACSP → settlement', note: 'Raast settles; RSOP settles the merchant through store-and-forward', from: 'Raast settles' },
+      { key: 'p2mIncoming2', prefix: 'acsp-', title: '2 · ACSP → settlement', note: 'Raast settles; RSOP settles the merchant through the acquiring system', from: 'Raast settles' },
     ],
     txn: { ref: 'P2M-IN-20261023-000091', title: 'P2M', detail: 'PKR 3,450.00', outcome: 'Settled · merchant credited', started: '15:43:40' },
   },
