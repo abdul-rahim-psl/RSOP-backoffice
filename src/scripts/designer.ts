@@ -21,8 +21,6 @@ interface ClientFlow {
   txns: ClientTxn[];
 }
 
-type Tab = 'params' | 'debug';
-
 const PLAY_MS = 1100;
 const ZOOMS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25];
 /** Below this the labels get too small to read, so the canvas scrolls instead. */
@@ -50,27 +48,23 @@ function init(root: HTMLElement) {
 
   const nodes = all<HTMLButtonElement>('.node');
   const edges = [...root.querySelectorAll<SVGGElement>('.edge')];
-  const txnButtons = all<HTMLButtonElement>('.txn');
-  const tabs = all<HTMLButtonElement>('[role="tab"]');
   const range = one<HTMLInputElement>('[data-tl-range]');
   const caption = one('[data-tl-caption]');
   const count = one('[data-tl-count]');
   const viewport = one('[data-viewport]');
   const stage = one('[data-stage]');
   const zoomLabel = one('[data-zoom-label]');
-  const debugCount = one('[data-debug-count]');
   const act = (name: string) => one<HTMLButtonElement>(`[data-act="${name}"]`);
 
   const state = {
     txn: null as ClientTxn | null,
     at: 0,
     node: root.dataset.defaultNode ?? 'start',
-    tab: 'params' as Tab,
     zoom: 'fit' as number | 'fit',
     timer: 0,
   };
 
-  // A deep link picks the transaction, the event (1-based), the tab and the step: ?txn=3&at=12&tab=debug#node-rest
+  // A deep link picks the transaction, the event (1-based) and the step: ?txn=3&at=12#node-rest
   const q = new URLSearchParams(location.search);
   const wanted = q.get('txn') ?? root.dataset.defaultTxn ?? 'none';
   state.txn = flow.txns.find((t) => String(t.n) === wanted) ?? null;
@@ -78,7 +72,6 @@ function init(root: HTMLElement) {
     const at = Number(q.get('at'));
     state.at = at >= 1 && at <= state.txn.events.length ? at - 1 : state.txn.events.length - 1;
   }
-  if (q.get('tab') === 'debug') state.tab = 'debug';
   const fromHash = location.hash.match(/^#node-([\w-]+)$/)?.[1];
   if (fromHash && label.has(fromHash)) state.node = fromHash;
 
@@ -89,32 +82,14 @@ function init(root: HTMLElement) {
   function renderNode() {
     nodes.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.node === state.node)));
     all('.insp-head, .insp-sec').forEach((el) => el.toggleAttribute('data-on', el.dataset.node === state.node));
-    renderDebugCount();
-  }
-
-  function renderTab() {
-    tabs.forEach((b) => {
-      const selected = b.dataset.tab === state.tab;
-      b.setAttribute('aria-selected', String(selected));
-      b.tabIndex = selected ? 0 : -1;
-    });
-    all('[data-panel]').forEach((p) => p.toggleAttribute('data-on', p.dataset.panel === state.tab));
-  }
-
-  function renderDebugCount() {
-    const t = state.txn;
-    const n = t ? t.events.filter((e, i) => e.node === state.node && i <= state.at).length : 0;
-    debugCount.textContent = n ? String(n) : '';
   }
 
   function renderTxn() {
     const t = state.txn;
     root.toggleAttribute('data-has-txn', !!t);
-    txnButtons.forEach((b) => b.setAttribute('aria-pressed', String(isTxn(b, t))));
-    all('.tl-which, .tl-track, .dbg').forEach((el) => el.toggleAttribute('data-on', isTxn(el, t)));
+    all('.tl-which, .tl-track').forEach((el) => el.toggleAttribute('data-on', isTxn(el, t)));
     one('[data-tl-empty]').hidden = !!t;
-    one('[data-dbg-none]').hidden = !!t;
-    ['first', 'prev', 'play', 'next', 'last', 'clear'].forEach((a) => (act(a).disabled = !t));
+    ['first', 'prev', 'play', 'next', 'last'].forEach((a) => (act(a).disabled = !t));
     range.disabled = !t;
 
     if (!t) {
@@ -132,7 +107,6 @@ function init(root: HTMLElement) {
       count.textContent = '';
       range.max = '0';
       range.value = '0';
-      renderDebugCount();
       return;
     }
 
@@ -172,21 +146,6 @@ function init(root: HTMLElement) {
     act('first').disabled = act('prev').disabled = state.at === 0;
     act('next').disabled = act('last').disabled = state.at === last;
     writeCaption(t, ev, name);
-
-    // Debug shows only what had happened by this point in the timeline.
-    root.querySelectorAll<HTMLElement>(`.dbg[data-txn="${t.n}"]`).forEach((d) => {
-      let shown = 0;
-      let later = 0;
-      d.querySelectorAll<HTMLElement>('.ev').forEach((a) => {
-        const future = Number(a.dataset.i) > state.at;
-        a.hidden = future;
-        if (future) later++;
-        else shown++;
-      });
-      const note = d.querySelector<HTMLElement>('[data-later]');
-      if (note) note.hidden = !(shown === 0 && later > 0);
-    });
-    renderDebugCount();
   }
 
   // Built with textContent: captions come from data, never from markup.
@@ -213,7 +172,6 @@ function init(root: HTMLElement) {
     const p = new URLSearchParams();
     p.set('txn', state.txn ? String(state.txn.n) : 'none');
     if (state.txn) p.set('at', String(state.at + 1));
-    if (state.tab === 'debug') p.set('tab', 'debug');
     const url = `${location.pathname}?${p}#node-${state.node}`;
     if (url !== location.pathname + location.search + location.hash) history.replaceState(null, '', url);
   }
@@ -227,14 +185,6 @@ function init(root: HTMLElement) {
     renderNode();
     syncUrl();
     reveal(state.node);
-  }
-
-  function pickTxn(n: number | null) {
-    stop();
-    state.txn = flow.txns.find((t) => t.n === n) ?? null;
-    if (state.txn) state.at = state.txn.events.length - 1;
-    renderTxn();
-    syncUrl();
   }
 
   function stop() {
@@ -299,13 +249,6 @@ function init(root: HTMLElement) {
 
   // ── Wiring ──────────────────────────────────────────────────────────────
 
-  txnButtons.forEach((b) =>
-    b.addEventListener('click', () => {
-      const n = Number(b.dataset.txn);
-      pickTxn(state.txn?.n === n ? null : n);
-    }),
-  );
-
   nodes.forEach((b) =>
     b.addEventListener('click', () => {
       state.node = b.dataset.node!;
@@ -313,22 +256,6 @@ function init(root: HTMLElement) {
       syncUrl();
     }),
   );
-
-  tabs.forEach((b, i) => {
-    b.addEventListener('click', () => {
-      state.tab = b.dataset.tab as Tab;
-      renderTab();
-      syncUrl();
-    });
-    b.addEventListener('keydown', (e) => {
-      const keys: Record<string, number> = { ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: tabs.length - 1 };
-      if (!(e.key in keys)) return;
-      e.preventDefault();
-      const next = tabs[(keys[e.key] + tabs.length) % tabs.length];
-      next.focus();
-      next.click();
-    });
-  });
 
   range.addEventListener('input', () => {
     stop();
@@ -339,7 +266,6 @@ function init(root: HTMLElement) {
   act('next').addEventListener('click', () => (stop(), go(state.at + 1)));
   act('last').addEventListener('click', () => (stop(), go(Number.MAX_SAFE_INTEGER)));
   act('play').addEventListener('click', play);
-  act('clear').addEventListener('click', () => pickTxn(null));
 
   all<HTMLButtonElement>('[data-zoom]').forEach((b) =>
     b.addEventListener('click', () => {
@@ -365,7 +291,6 @@ function init(root: HTMLElement) {
   );
 
   applyZoom();
-  renderTab();
   renderTxn();
   renderNode();
   reveal(state.node);

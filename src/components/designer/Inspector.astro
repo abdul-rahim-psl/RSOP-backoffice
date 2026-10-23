@@ -1,17 +1,14 @@
 ---
 import Icon, { type IconName } from '../Icon.astro';
-import ToneIcon from '../ToneIcon.astro';
 import YamlBlock from './YamlBlock.astro';
 import type { Flow, NodeKind } from '../../lib/flow';
-import { since } from '../../lib/format';
 
 interface Props {
   flow: Flow;
   defaultNode: string;
-  defaultTxn: number;
 }
 
-const { flow, defaultNode, defaultTxn } = Astro.props;
+const { flow, defaultNode } = Astro.props;
 
 const icons: Record<NodeKind, IconName> = {
   start: 'flag',
@@ -29,12 +26,8 @@ const icons: Record<NodeKind, IconName> = {
   service: 'more',
 };
 const on = (id: string) => (id === defaultNode ? '' : undefined);
-/** The chain excerpt, one token per line; arrows and the step itself are marked for styling. */
-const pieces = (chain: string, self: string) =>
-  chain
-    .split(/(<-->|-->)/)
-    .filter(Boolean)
-    .map((v) => ({ v, arrow: /^(<-->|-->)$/.test(v), self: v === self || v.toLowerCase() === self.toLowerCase() }));
+/** Raast and the biller sit outside RSOP, so only their description is shown. */
+const aboutOnly = (n: Flow['nodes'][number]) => n.kind === 'party' || n.kind === 'biller';
 ---
 
 <aside class="inspector" id="inspector" aria-labelledby="insp-h">
@@ -54,108 +47,18 @@ const pieces = (chain: string, self: string) =>
     ))
   }
 
-  <div class="tabs" role="tablist" aria-label="Step details">
-    <button class="tab" type="button" role="tab" id="tab-params" aria-controls="panel-params" aria-selected="true" data-tab="params">
-      Params
-    </button>
-    <button class="tab" type="button" role="tab" id="tab-debug" aria-controls="panel-debug" aria-selected="false" tabindex="-1" data-tab="debug">
-      Debug <span class="tab-count mono" data-debug-count></span>
-    </button>
-  </div>
-
-  <div class="panel" role="tabpanel" id="panel-params" aria-labelledby="tab-params" data-panel="params" data-on="">
+  <div class="panel">
     {
       flow.nodes.map((n) => (
         <section class="insp-sec" data-node={n.id} data-on={on(n.id)}>
           <h3 class="nojs-only">{n.label}</h3>
           <p class="about">{n.about}</p>
-          {(n.source || n.template) && (
-            <div class="form-group">
-              <h4 class="fg-title">{n.source ? 'Source: RSOP API' : 'Configuration'}</h4>
-              <dl class="form">
-                {n.source && (
-                  <>
-                    <div>
-                      <dt>Endpoint</dt>
-                      <dd class="mono">GET {n.source.endpoint}</dd>
-                    </div>
-                    <div>
-                      <dt>Key</dt>
-                      <dd class="mono">{n.source.key}</dd>
-                    </div>
-                    <div>
-                      <dt>Position</dt>
-                      <dd>
-                        Step {n.source.position} of {n.source.of}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Chain</dt>
-                      <dd class="mono chain">
-                        {pieces(n.source.excerpt, n.service ?? n.label).map((p) => (
-                          <span class:list={{ arr: p.arrow, self: p.self }}>{p.v}</span>
-                        ))}
-                      </dd>
-                    </div>
-                  </>
-                )}
-                {n.template && (
-                  <div>
-                    <dt>Template</dt>
-                    <dd class="mono">{n.template}</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
+          {!aboutOnly(n) && (
+            <>
+              <h4 class="fg-title">Parameters</h4>
+              <YamlBlock value={n.params} label={`${n.label} parameters`} copy />
+            </>
           )}
-          <h4 class="fg-title">Parameters</h4>
-          <YamlBlock value={n.params} label={`${n.label} parameters`} copy />
-        </section>
-      ))
-    }
-  </div>
-
-  <div class="panel" role="tabpanel" id="panel-debug" aria-labelledby="tab-debug" data-panel="debug">
-    <p class="dbg-none" data-dbg-none hidden>
-      <Icon name="info" size={16} />
-      Select a transaction to see its events at this step
-    </p>
-    {
-      flow.nodes.map((n) => (
-        <section class="insp-sec" data-node={n.id} data-on={on(n.id)}>
-          <h3 class="nojs-only">{n.label}</h3>
-          {flow.txns.map((t) => {
-            const evs = t.events.map((e, i) => ({ e, i })).filter(({ e }) => e.node === n.id);
-            return (
-              <div class="dbg" data-txn={t.n} data-on={t.n === defaultTxn ? '' : undefined}>
-                <p class="nojs-only dbg-txn">Transaction {t.n}</p>
-                {evs.length ? (
-                  <>
-                    {evs.map(({ e, i }) => (
-                      <article class="ev" data-i={i} data-tone={e.tone}>
-                        <header class="ev-head">
-                          <span class="ev-tone" data-tone={e.tone}>
-                            <ToneIcon tone={e.tone} />
-                          </span>
-                          <b>{e.title}</b>
-                          <span class="ev-meta mono">
-                            Event {i + 1} · {since(e.at)}
-                          </span>
-                        </header>
-                        <p class="ev-text">{e.text}</p>
-                        {e.data && <YamlBlock value={e.data} label={`${n.label}, event ${i + 1} payload`} />}
-                      </article>
-                    ))}
-                    <p class="dbg-later" data-later>
-                      Not reached at this timeline position
-                    </p>
-                  </>
-                ) : (
-                  <p class="dbg-never">Transaction {t.n} did not pass through this step</p>
-                )}
-              </div>
-            );
-          })}
         </section>
       ))
     }

@@ -49,13 +49,11 @@
   --tone-ink: var(--info-ink);
 }
 
-/* Without JavaScript every step, transaction and event stays listed; with it, only the picked ones show. */
+/* Without JavaScript every step and transaction stays listed; with it, only the picked ones show. */
 .js .designer .insp-head:not([data-on]),
 .js .designer .insp-sec:not([data-on]),
-.js .designer .panel:not([data-on]),
 .js .designer .tl-which:not([data-on]),
 .js .designer .tl-track:not([data-on]),
-.js .designer .dbg:not([data-on]),
 .js .designer .nojs-only {
   display: none;
 }
@@ -95,7 +93,7 @@
   background: var(--stroke);
 }
 
-/* ── Side panel (flows and transactions) ─────────────────────────────── */
+/* ── Side panel (flows) ─────────────────────────────── */
 
 .designer .rail {
   display: flex;
@@ -155,8 +153,7 @@
   font-weight: 600;
 }
 
-.designer .flow-link[aria-current='page']::before,
-.designer .txn[aria-pressed='true']::before {
+.designer .flow-link[aria-current='page']::before {
   content: '';
   position: absolute;
   inset: 0 auto 0 0;
@@ -173,82 +170,6 @@
   color: var(--mut);
   font-size: 0.8125rem;
   font-weight: 400;
-}
-
-.designer .rail-hint {
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--stroke);
-  color: var(--mut);
-  font-size: 0.8125rem;
-}
-
-/* Positioned, so the selection bar and the visually hidden label stay inside the item. */
-.designer .txn {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 16px;
-  border: 0;
-  border-bottom: 1px solid var(--stroke);
-  border-radius: 0;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-
-.designer .txn:hover {
-  background: var(--hover);
-}
-
-.designer .txn[aria-pressed='true'] {
-  background: var(--selected);
-}
-
-.designer .txn-n {
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 4px;
-  border-radius: var(--radius-field);
-  background: var(--neutral-bg);
-  color: var(--ink-2);
-  font-size: 0.75rem;
-}
-
-.designer .txn[aria-pressed='true'] .txn-n {
-  background: var(--link);
-  color: var(--panel);
-}
-
-.designer .txn-body {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.designer .txn-title {
-  color: var(--ink);
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.designer .txn-detail {
-  color: var(--ink-2);
-  font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.designer .txn-meta {
-  overflow: hidden;
-  color: var(--mut);
-  font-size: 0.75rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* ObjectStatus: a coloured icon and coloured text, no background. */
@@ -869,8 +790,7 @@
   background: var(--panel);
 }
 
-.designer .tl-btn:disabled,
-.designer .tl-clear:disabled {
+.designer .tl-btn:disabled {
   opacity: 0.4;
   cursor: default;
 }
@@ -899,22 +819,6 @@
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
   text-align: center;
-}
-
-.designer .tl-clear {
-  height: 36px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--link);
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.designer .tl-clear:hover:not(:disabled) {
-  background: var(--hover);
 }
 
 .designer .tl-empty {
@@ -1180,68 +1084,12 @@
   font-size: 0.75rem;
 }
 
-/* An icon tab bar: text tabs over a hairline, the selected one underlined in blue. */
-.designer .tabs {
-  display: flex;
-  gap: 8px;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--stroke);
-}
-
-.designer .tab {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 44px;
-  padding: 0 8px;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-
-.designer .tab:hover {
-  color: var(--link);
-}
-
-.designer .tab[aria-selected='true'] {
-  color: var(--link);
-  font-weight: 600;
-}
-
-.designer .tab[aria-selected='true']::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 0;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  background: var(--link);
-}
-
-.designer .tab-count {
-  color: var(--mut);
-  font-family: var(--font-sans);
-  font-weight: 400;
-}
-
-.designer .tab-count:not(:empty)::before {
-  content: '(';
-}
-
-.designer .tab-count:not(:empty)::after {
-  content: ')';
-}
-
 .designer .panel {
   padding: 16px 20px 24px;
 }
 
 /* minmax(0, 1fr): a long YAML line scrolls inside its block instead of widening the panel. */
-.designer .insp-sec,
-.designer .dbg,
-.designer .ev {
+.designer .insp-sec {
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -1267,58 +1115,11 @@
   line-height: 1.5;
 }
 
-/* A form group: a bold title, then muted labels beside their values. */
+/* A section title in the inspector. */
 .designer .fg-title {
   margin-top: 4px;
   color: var(--ink-2);
   font-size: 0.875rem;
-  font-weight: 700;
-}
-
-.designer .form-group {
-  display: grid;
-  gap: 8px;
-}
-
-.designer .form {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  font-size: 0.8125rem;
-}
-
-.designer .form > div {
-  display: grid;
-  grid-template-columns: 6.5em minmax(0, 1fr);
-  gap: 12px;
-}
-
-.designer .form dt {
-  color: var(--mut);
-}
-
-.designer .form dd {
-  margin: 0;
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-
-.designer .form .mono {
-  font-size: 0.75rem;
-  line-height: 1.6;
-}
-
-.designer .form .chain {
-  display: grid;
-  line-height: 1.5;
-}
-
-.designer .form .chain .arr {
-  color: var(--mut);
-}
-
-.designer .form .chain .self {
-  color: var(--link);
   font-weight: 700;
 }
 
@@ -1394,98 +1195,6 @@
   background: var(--hover);
 }
 
-/* An information message strip. */
-.designer .dbg-none {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  border: 1px solid color-mix(in srgb, var(--info) 40%, transparent);
-  border-radius: var(--radius-sm);
-  background: var(--info-bg);
-  color: var(--ink);
-  font-size: 0.875rem;
-}
-
-.designer .dbg-none .icon {
-  flex: 0 0 auto;
-  margin-top: 2px;
-  color: var(--info);
-}
-
-.designer .dbg-none[hidden] {
-  display: none;
-}
-
-.designer .dbg {
-  display: grid;
-  gap: 0;
-}
-
-.designer .dbg-never,
-.designer .dbg-later {
-  color: var(--mut);
-  font-size: 0.875rem;
-}
-
-.designer .dbg-later[hidden],
-.designer .ev[hidden] {
-  display: none;
-}
-
-.designer .dbg-txn {
-  color: var(--mut);
-  font-size: 0.75rem;
-}
-
-/* Events read as list items: status, title and time, then the text and payload. */
-.designer .ev {
-  display: grid;
-  gap: 8px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--stroke);
-}
-
-.designer .ev:first-of-type {
-  padding-top: 0;
-}
-
-.designer .ev-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 8px;
-  font-size: 0.875rem;
-}
-
-.designer .ev-head b {
-  font-weight: 600;
-}
-
-.designer .ev-tone {
-  display: grid;
-  place-items: center;
-  color: var(--tone);
-}
-
-.designer .ev-tone .tone-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.designer .ev-meta {
-  margin-left: auto;
-  color: var(--mut);
-  font-size: 0.75rem;
-}
-
-.designer .ev-text {
-  color: var(--ink-2);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-}
-
 /* ── Smaller screens ──────────────────────────────────────────────────── */
 
 @media (max-width: 1179px) {
@@ -1510,7 +1219,6 @@
   }
 
   .designer .inspector > .insp-head,
-  .designer .inspector > .tabs,
   .designer .inspector > .panel {
     max-width: 860px;
   }
@@ -1530,27 +1238,6 @@
   .designer .flow-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
-  }
-
-  .designer .rail-hint {
-    display: none;
-  }
-
-  /* Transactions become a row of items that scrolls sideways inside the panel, not the page. */
-  .designer .txn-list {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-  }
-
-  .designer .txn-list li {
-    flex: 0 0 236px;
-    scroll-snap-align: start;
-    border-right: 1px solid var(--stroke);
-  }
-
-  .designer .txn {
-    height: 100%;
   }
 
   .designer .toolbar,
@@ -1580,8 +1267,7 @@
   }
 
   .designer .insp-head,
-  .designer .panel,
-  .designer .tabs {
+  .designer .panel {
     padding-inline: 16px;
   }
 }

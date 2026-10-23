@@ -37,7 +37,7 @@ const json = JSON.stringify(client).replace(/</g, '\\u003c');
     <Canvas flow={flow} />
     <Timeline flow={flow} defaultTxn={defaultTxn} />
   </div>
-  <Inspector flow={flow} defaultNode={defaultNode} defaultTxn={defaultTxn} />
+  <Inspector flow={flow} defaultNode={defaultNode} />
   <script type="application/json" data-flow set:html={json} />
 </div>
 
